@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DisasterTracker.Api/DisasterTracker.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DisasterTracker.Api.Tests/DisasterTracker.Api.Tests.csproj" />
+  </Folder>
+</Solution>
