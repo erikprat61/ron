@@ -186,6 +186,12 @@ resource "google_storage_bucket_iam_member" "ui_deployment_admin" {
   member = "serviceAccount:${google_service_account.deployment.email}"
 }
 
+resource "google_storage_bucket_iam_member" "ui_deployment_bucket_reader" {
+  bucket = google_storage_bucket.ui.name
+  role   = "roles/storage.legacyBucketReader"
+  member = "serviceAccount:${google_service_account.deployment.email}"
+}
+
 resource "google_compute_backend_bucket" "ui" {
   project     = var.project_id
   name        = "${var.environment}-ron-ui-backend"
@@ -295,13 +301,21 @@ resource "google_cloud_run_v2_service" "api" {
         name = "RON_REFRESH_ALLOWED_INVOKER_EMAILS"
         value = join(",", compact([
           try(google_service_account.refresh_scheduler[0].email, null),
-          google_service_account.deployment.email
+          try(google_service_account.refresh_scheduler[0].unique_id, null),
+          google_service_account.deployment.email,
+          google_service_account.deployment.unique_id
         ]))
       }
     }
   }
 
   deletion_protection = false
+
+  lifecycle {
+    ignore_changes = [
+      template[0].containers[0].image
+    ]
+  }
 
   depends_on = [
     google_project_service.required,
@@ -375,6 +389,12 @@ resource "google_cloud_run_v2_service" "ui" {
   }
 
   deletion_protection = false
+
+  lifecycle {
+    ignore_changes = [
+      template[0].containers[0].image
+    ]
+  }
 
   depends_on = [google_project_service.required]
 }

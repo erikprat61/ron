@@ -150,7 +150,7 @@ Key runtime environment variables:
 | `RON_PUBLIC_API_BASE_URL` | Public API base URL used by the static demo UI build. |
 | `RON_DEMO_UI_ALLOWED_ORIGINS` | Comma-separated CORS allowlist for the demo UI origin(s). |
 | `RON_REFRESH_AUTH_TOKEN` | Optional shared secret for manually triggering the protected refresh endpoint. |
-| `RON_REFRESH_ALLOWED_INVOKER_EMAILS` | Comma-separated Google service-account identities allowed to invoke the protected refresh endpoint with OIDC. |
+| `RON_REFRESH_ALLOWED_INVOKER_EMAILS` | Comma-separated Google service-account identities allowed to invoke the protected refresh endpoint with OIDC, including service-account emails or Google subject IDs. |
 | `RON_REDIS_ENABLED` / `RON_REDIS_URL` / `RON_REDIS_KEY_PREFIX` | Reserved Redis contract for future shared-cache work. |
 | `RON_DATABASE_ENABLED` / `RON_DATABASE_URL` | Reserved database contract for future persistence work. |
 | `DISASTER_BACKGROUND_REFRESH_ENABLED` | Enables the in-process refresh timer. Leave disabled in Cloud Run. |
