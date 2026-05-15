@@ -63,6 +63,21 @@ output "deployment_service_account_email" {
   value       = google_service_account.deployment.email
 }
 
+output "refresh_scheduler_job_name" {
+  description = "Cloud Scheduler job name for the authenticated refresh trigger."
+  value       = try(google_cloud_scheduler_job.refresh[0].name, null)
+}
+
+output "refresh_scheduler_service_account_email" {
+  description = "Service account used by Cloud Scheduler to authenticate refresh calls."
+  value       = try(google_service_account.refresh_scheduler[0].email, null)
+}
+
+output "refresh_trigger_url" {
+  description = "Authenticated refresh trigger URL for the API."
+  value       = "${google_cloud_run_v2_service.api.uri}/internal/refresh"
+}
+
 output "github_workload_identity_provider" {
   description = "Full resource name of the GitHub Actions workload identity provider."
   value       = google_iam_workload_identity_pool_provider.github_actions.name

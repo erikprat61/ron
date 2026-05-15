@@ -54,6 +54,30 @@ variable "api_max_instance_count" {
   default     = 3
 }
 
+variable "refresh_scheduler_enabled" {
+  description = "Whether to create the Cloud Scheduler job that warms the API snapshot cache."
+  type        = bool
+  default     = false
+}
+
+variable "refresh_scheduler_job_name" {
+  description = "Cloud Scheduler job name for the authenticated API refresh trigger."
+  type        = string
+  default     = "ron-refresh"
+}
+
+variable "refresh_scheduler_schedule" {
+  description = "Cron schedule for the authenticated API refresh trigger."
+  type        = string
+  default     = "*/15 * * * *"
+}
+
+variable "refresh_scheduler_time_zone" {
+  description = "Time zone for the refresh scheduler cron expression."
+  type        = string
+  default     = "Etc/UTC"
+}
+
 variable "create_ui_cloud_run" {
   description = "Whether to create a temporary Cloud Run service for the demo UI."
   type        = bool

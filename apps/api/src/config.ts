@@ -40,6 +40,7 @@ const envSchema = z.object({
   RON_PUBLIC_API_BASE_URL: z.string().url().optional(),
   RON_DEMO_UI_ALLOWED_ORIGINS: optionalCsvSchema,
   RON_REFRESH_AUTH_TOKEN: z.string().trim().min(1).optional(),
+  RON_REFRESH_ALLOWED_INVOKER_EMAILS: optionalCsvSchema,
   RON_REDIS_ENABLED: optionalBooleanSchema,
   RON_REDIS_URL: z.string().trim().min(1).optional(),
   RON_REDIS_KEY_PREFIX: z.string().trim().min(1).optional(),
@@ -81,7 +82,9 @@ export function loadConfig(): RonConfig {
     },
     refreshTrigger: {
       ...defaultRonConfig.refreshTrigger,
-      authToken: env.RON_REFRESH_AUTH_TOKEN ?? defaultRonConfig.refreshTrigger.authToken
+      authToken: env.RON_REFRESH_AUTH_TOKEN ?? defaultRonConfig.refreshTrigger.authToken,
+      allowedInvokerEmails:
+        env.RON_REFRESH_ALLOWED_INVOKER_EMAILS ?? defaultRonConfig.refreshTrigger.allowedInvokerEmails
     },
     redis: {
       ...defaultRonConfig.redis,

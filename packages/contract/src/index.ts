@@ -295,6 +295,7 @@ export interface DemoUiConfig {
 
 export interface RefreshTriggerConfig {
   authToken?: string;
+  allowedInvokerEmails: string[];
 }
 
 export interface RedisConfig {
@@ -383,7 +384,9 @@ export const defaultRonConfig: RonConfig = {
     allowedOrigins: ["http://localhost:4173", "http://127.0.0.1:4173"],
     publicApiBaseUrl: "http://localhost:5096"
   },
-  refreshTrigger: {},
+  refreshTrigger: {
+    allowedInvokerEmails: []
+  },
   redis: {
     enabled: false,
     keyPrefix: "ron"

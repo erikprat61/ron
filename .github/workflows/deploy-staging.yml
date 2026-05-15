@@ -149,6 +149,20 @@ jobs:
             --retry-delay 10 \
             "${{ steps.deploy.outputs.api_url }}/openapi.json" >/dev/null
 
+      - name: Warm staging snapshot cache
+        run: |
+          set -euo pipefail
+          refresh_url="${{ steps.deploy.outputs.api_url }}/internal/refresh"
+          id_token="$(gcloud auth print-identity-token --audiences="$refresh_url" --include-email)"
+
+          curl --fail --show-error --silent \
+            --retry 5 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            --request POST \
+            --header "Authorization: Bearer ${id_token}" \
+            "$refresh_url" >/dev/null
+
       - name: Smoke check staging UI
         run: |
           set -euo pipefail

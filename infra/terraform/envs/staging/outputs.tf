@@ -34,6 +34,18 @@ output "deployment_service_account_email" {
   value = module.foundation.deployment_service_account_email
 }
 
+output "refresh_scheduler_job_name" {
+  value = module.foundation.refresh_scheduler_job_name
+}
+
+output "refresh_scheduler_service_account_email" {
+  value = module.foundation.refresh_scheduler_service_account_email
+}
+
+output "refresh_trigger_url" {
+  value = module.foundation.refresh_trigger_url
+}
+
 output "github_workload_identity_provider" {
   value = module.foundation.github_workload_identity_provider
 }

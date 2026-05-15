@@ -34,6 +34,8 @@ describe("loadConfig", () => {
     process.env.RON_PUBLIC_API_BASE_URL = "https://api.staging.example.com/";
     process.env.RON_DEMO_UI_ALLOWED_ORIGINS = "https://ui.staging.example.com, https://preview.example.com";
     process.env.RON_REFRESH_AUTH_TOKEN = "test-token";
+    process.env.RON_REFRESH_ALLOWED_INVOKER_EMAILS =
+      "scheduler@ron-burgundy-staging.iam.gserviceaccount.com, deployer@ron-burgundy-staging.iam.gserviceaccount.com";
     process.env.RON_REDIS_ENABLED = "true";
     process.env.RON_REDIS_URL = "redis://cache.internal:6379";
     process.env.RON_REDIS_KEY_PREFIX = "ron-staging";
@@ -52,6 +54,10 @@ describe("loadConfig", () => {
       "https://preview.example.com"
     ]);
     expect(config.refreshTrigger.authToken).toBe("test-token");
+    expect(config.refreshTrigger.allowedInvokerEmails).toEqual([
+      "scheduler@ron-burgundy-staging.iam.gserviceaccount.com",
+      "deployer@ron-burgundy-staging.iam.gserviceaccount.com"
+    ]);
     expect(config.redis).toEqual({
       enabled: true,
       url: "redis://cache.internal:6379",

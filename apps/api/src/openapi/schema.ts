@@ -251,6 +251,30 @@ const healthResponseSchema = {
   required: ["generatedAt", "status", "ready"]
 } as const;
 
+const refreshTriggerResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    generatedAt: isoDateTimeSchema,
+    eventCount: { type: "integer", minimum: 0 },
+    sourceHealthCount: { type: "integer", minimum: 0 },
+    resourceImpactCount: { type: "integer", minimum: 0 },
+    triggeredBy: { type: "string" },
+    authenticationMethod: {
+      type: "string",
+      enum: ["auth-token", "oidc"]
+    }
+  },
+  required: [
+    "generatedAt",
+    "eventCount",
+    "sourceHealthCount",
+    "resourceImpactCount",
+    "triggeredBy",
+    "authenticationMethod"
+  ]
+} as const;
+
 const disasterSearchResponseSchema = {
   type: "object",
   additionalProperties: false,
@@ -395,6 +419,18 @@ export function buildOpenApiDocument(baseUrl = "http://localhost:5096") {
           operationId: "getHealth",
           responses: {
             200: jsonResponse("Current process liveness and Cloud Run-safe readiness.", healthResponseSchema)
+          }
+        }
+      },
+      "/internal/refresh": {
+        post: {
+          tags: ["system"],
+          summary: "Trigger an authenticated snapshot refresh",
+          operationId: "triggerRefresh",
+          responses: {
+            200: jsonResponse("Refresh completed and returned the latest snapshot counts.", refreshTriggerResponseSchema),
+            401: problemResponse("Refresh trigger credentials were rejected."),
+            503: problemResponse("Refresh trigger authentication is not configured.")
           }
         }
       },
@@ -567,6 +603,7 @@ export function buildOpenApiDocument(baseUrl = "http://localhost:5096") {
         ResourceImpactResponse: resourceImpactResponseSchema,
         SourceHealthResponse: sourceHealthResponseSchema,
         HealthResponse: healthResponseSchema,
+        RefreshTriggerResponse: refreshTriggerResponseSchema,
         ProblemDetails: problemDetailsSchema
       }
     }

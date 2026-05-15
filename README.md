@@ -90,6 +90,7 @@ Default local URLs:
 - `GET /`
 - `GET /health`
 - `GET /openapi.json`
+- `POST /internal/refresh`
 - `GET /sources/health`
 - `GET /snapshot`
 - `GET /disasters`
@@ -148,7 +149,8 @@ Key runtime environment variables:
 | `SUPPLY_IMPACT_PROFILE_PATH` | Override the resource-impact profile JSON path. |
 | `RON_PUBLIC_API_BASE_URL` | Public API base URL used by the static demo UI build. |
 | `RON_DEMO_UI_ALLOWED_ORIGINS` | Comma-separated CORS allowlist for the demo UI origin(s). |
-| `RON_REFRESH_AUTH_TOKEN` | Reserved auth token contract for a future protected refresh trigger. |
+| `RON_REFRESH_AUTH_TOKEN` | Optional shared secret for manually triggering the protected refresh endpoint. |
+| `RON_REFRESH_ALLOWED_INVOKER_EMAILS` | Comma-separated Google service-account identities allowed to invoke the protected refresh endpoint with OIDC. |
 | `RON_REDIS_ENABLED` / `RON_REDIS_URL` / `RON_REDIS_KEY_PREFIX` | Reserved Redis contract for future shared-cache work. |
 | `RON_DATABASE_ENABLED` / `RON_DATABASE_URL` | Reserved database contract for future persistence work. |
 | `DISASTER_BACKGROUND_REFRESH_ENABLED` | Enables the in-process refresh timer. Leave disabled in Cloud Run. |
@@ -168,6 +170,8 @@ Important config areas:
 - `supplyImpact`
 
 The National Weather Service should be configured with a real descriptive user agent before production use. Production health checks should target `GET /health`, while upstream feed state remains available from `GET /sources/health`.
+
+The protected refresh trigger lives at `POST /internal/refresh`. In Google Cloud, Phase 4 expects Cloud Scheduler and the GitHub deployment service account to invoke that route with Google-signed OIDC tokens. Staging keeps cache warming on a slower `*/30 * * * *` cadence, while production uses `*/10 * * * *`; both environments also warm the new revision once immediately after deploy.
 
 ## Deployment-oriented build paths
 
@@ -199,6 +203,7 @@ The shared foundation module provisions:
 - Cloud Run for the API and optional temporary UI runtime
 - Cloud Storage plus Cloud CDN load-balancer resources for the static UI
 - Secret Manager placeholders for runtime configuration
+- Cloud Scheduler plus a dedicated refresh invoker identity for authenticated cache warming
 - least-privilege runtime service accounts
 - GitHub Actions Workload Identity Federation and deploy identities for CI/CD
 
@@ -225,6 +230,8 @@ The staging and production workflows expect GitHub **environment variables** wit
 | `GCP_UI_BUCKET` | `terraform output -raw ui_bucket_name` |
 | `GCP_UI_URL` | `terraform output -raw ui_url` |
 | `GCP_UI_URL_MAP` | `terraform output -raw ui_url_map_name` |
+
+Phase 4 also exports `refresh_scheduler_job_name`, `refresh_scheduler_service_account_email`, and `refresh_trigger_url` so the scheduler configuration can be inspected after `terraform apply`.
 
 Apply Terraform for the target environment first, then copy those outputs into the matching GitHub environment (`staging` or `production`). The production workflow takes a validated `git_ref` plus an existing Artifact Registry `image_uri` so Cloud Run promotion reuses the already-published API artifact.
 

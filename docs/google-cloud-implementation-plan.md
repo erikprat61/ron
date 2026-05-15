@@ -14,10 +14,15 @@ It turns those architecture and operations recommendations into one ordered impl
 3. **Google Cloud projects are created.**
    - staging: `ron-burgundy-staging`
    - production: `ron-burgundy-production`
-4. **Phase 3 repository work is now in place.**
-   - Terraform exposes GitHub Actions Workload Identity Federation and deploy-service-account outputs for both environments.
+4. **Phase 3 is complete.**
+   - Terraform is applied in both staging and production, including Workload Identity Federation and deploy identities.
    - GitHub Actions workflows exist for pull request CI, `main`-branch staging deploys, and manual production promotion.
-5. **Next operational step:** apply the updated Terraform, then populate the matching GitHub environment variables from Terraform outputs.
+   - GitHub `staging` and `production` environments are populated with the required `GCP_*` variables from Terraform outputs.
+5. **Phase 4 is complete.**
+   - The API now exposes an authenticated refresh trigger at `POST /internal/refresh`.
+   - Terraform now provisions Cloud Scheduler refresh jobs plus dedicated scheduler identities in staging and production.
+   - Staging and production deploy workflows warm the new revision immediately after deployment while ongoing cadence remains scheduler-owned.
+6. **Next phase:** Phase 5 - add production observability and rollback discipline.
 
 ## Goal
 
@@ -136,6 +141,8 @@ The plan intentionally preserves the current app and package boundaries, priorit
 
 **Outcome:** GitHub continuously validates the repo and deploys staging automatically.
 
+**Status:** complete
+
 #### Scope
 
 1. Add GitHub Actions CI for install, build, test, and API image build.
@@ -168,6 +175,8 @@ The plan intentionally preserves the current app and package boundaries, priorit
 ### Phase 4: Move refresh orchestration out of the app instance
 
 **Outcome:** refresh timing is controlled by infrastructure instead of Cloud Run lifecycle behavior.
+
+**Status:** complete
 
 #### Scope
 
@@ -334,7 +343,7 @@ The first batch of execution work was:
 4. Create staging infrastructure in Terraform.
 5. Add GitHub Actions CI and Workload Identity Federation-based staging deploys.
 
-Items 1 through 4 are complete. Item 5 is the current next implementation target.
+Items 1 through 5 are complete. Phase 4 is now complete, and Phase 5 is the current next implementation target.
 
 ## Definition of done
 

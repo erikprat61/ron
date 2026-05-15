@@ -17,6 +17,7 @@ locals {
   ui_bucket_name                   = coalesce(var.ui_bucket_name, "${var.project_id}-${var.environment}-ron-demo-ui")
   github_workload_identity_pool_id = coalesce(var.github_workload_identity_pool_id, "${var.environment}-github-actions")
   deployment_service_account_id    = coalesce(var.deployment_service_account_id, "${var.environment}-ron-deployer")
+  refresh_scheduler_job_name       = substr(replace(lower(var.refresh_scheduler_job_name), "/[^a-z0-9-]/", "-"), 0, 500)
   github_actions_project_roles = toset([
     "roles/artifactregistry.writer",
     "roles/compute.loadBalancerAdmin",
@@ -64,6 +65,16 @@ resource "google_service_account" "deployment" {
   project      = var.project_id
   account_id   = substr(replace(lower(local.deployment_service_account_id), "/[^a-z0-9-]/", "-"), 0, 30)
   display_name = "Ron GitHub deployer (${var.environment})"
+
+  depends_on = [google_project_service.required]
+}
+
+resource "google_service_account" "refresh_scheduler" {
+  count = var.refresh_scheduler_enabled ? 1 : 0
+
+  project      = var.project_id
+  account_id   = substr(replace(lower("${var.environment}-ron-refresh"), "/[^a-z0-9-]/", "-"), 0, 30)
+  display_name = "Ron refresh scheduler (${var.environment})"
 
   depends_on = [google_project_service.required]
 }
@@ -279,6 +290,14 @@ resource "google_cloud_run_v2_service" "api" {
         name  = "RON_DEMO_UI_ALLOWED_ORIGINS"
         value = local.ui_origin
       }
+
+      env {
+        name = "RON_REFRESH_ALLOWED_INVOKER_EMAILS"
+        value = join(",", compact([
+          try(google_service_account.refresh_scheduler[0].email, null),
+          google_service_account.deployment.email
+        ]))
+      }
     }
   }
 
@@ -296,6 +315,47 @@ resource "google_cloud_run_v2_service_iam_member" "api_public" {
   name     = google_cloud_run_v2_service.api.name
   role     = "roles/run.invoker"
   member   = "allUsers"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "refresh_scheduler_invoker" {
+  count = var.refresh_scheduler_enabled ? 1 : 0
+
+  project  = var.project_id
+  location = google_cloud_run_v2_service.api.location
+  name     = google_cloud_run_v2_service.api.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.refresh_scheduler[0].email}"
+}
+
+resource "google_cloud_scheduler_job" "refresh" {
+  count = var.refresh_scheduler_enabled ? 1 : 0
+
+  project          = var.project_id
+  region           = var.region
+  name             = local.refresh_scheduler_job_name
+  description      = "Authenticated snapshot refresh for Ron ${var.environment}."
+  schedule         = var.refresh_scheduler_schedule
+  time_zone        = var.refresh_scheduler_time_zone
+  attempt_deadline = "320s"
+
+  http_target {
+    http_method = "POST"
+    uri         = "${google_cloud_run_v2_service.api.uri}/internal/refresh"
+
+    oidc_token {
+      service_account_email = google_service_account.refresh_scheduler[0].email
+      audience              = "${google_cloud_run_v2_service.api.uri}/internal/refresh"
+    }
+  }
+
+  retry_config {
+    retry_count = 3
+  }
+
+  depends_on = [
+    google_project_service.required,
+    google_cloud_run_v2_service_iam_member.refresh_scheduler_invoker
+  ]
 }
 
 resource "google_cloud_run_v2_service" "ui" {

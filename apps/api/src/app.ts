@@ -14,6 +14,7 @@ import type { SourceHealthService } from "@ron/service-source-health";
 import type { ZipContextService } from "@ron/service-zip-context";
 import { NotFoundError } from "@ron/http";
 import { buildOpenApiDocument } from "./openapi/schema.ts";
+import { authorizeRefreshTriggerRequest, type RefreshOidcVerifier, verifyGoogleOidcToken } from "./refresh-trigger.ts";
 
 export interface AppServices {
   config: RonConfig;
@@ -22,8 +23,13 @@ export interface AppServices {
   sourceHealthService: SourceHealthService;
 }
 
-export function createApp(services: AppServices) {
+export interface AppOptions {
+  verifyRefreshOidcToken?: RefreshOidcVerifier;
+}
+
+export function createApp(services: AppServices, options: AppOptions = {}) {
   const app = new Hono();
+  const verifyRefreshOidcToken = options.verifyRefreshOidcToken ?? verifyGoogleOidcToken;
 
   app.use(
     "*",
@@ -62,6 +68,37 @@ export function createApp(services: AppServices) {
   app.get("/snapshot", async (context) => {
     const response = await services.disasterCatalogService.getSnapshot();
     return json(context, response);
+  });
+
+  app.post("/internal/refresh", async (context) => {
+    const authorization = await authorizeRefreshTriggerRequest(
+      context.req.raw,
+      services.config.refreshTrigger,
+      verifyRefreshOidcToken
+    );
+
+    if (!authorization.ok) {
+      return problem(
+        context,
+        {
+          title: authorization.status === 503 ? "Refresh trigger unavailable" : "Refresh trigger unauthorized",
+          detail: authorization.detail,
+          status: authorization.status
+        },
+        authorization.status
+      );
+    }
+
+    const snapshot = await services.disasterCatalogService.refresh();
+
+    return json(context, {
+      generatedAt: snapshot.generatedAt,
+      eventCount: snapshot.events.length,
+      sourceHealthCount: snapshot.sourceHealth.length,
+      resourceImpactCount: snapshot.resourceImpacts.length,
+      triggeredBy: authorization.principal,
+      authenticationMethod: authorization.method
+    });
   });
 
   app.get("/disasters", async (context) => {

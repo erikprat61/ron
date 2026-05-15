@@ -50,3 +50,21 @@ variable "ui_domain_names" {
   type        = list(string)
   default     = []
 }
+
+variable "refresh_scheduler_enabled" {
+  description = "Whether to create the staging refresh scheduler job."
+  type        = bool
+  default     = true
+}
+
+variable "refresh_scheduler_schedule" {
+  description = "Cron schedule for the staging refresh scheduler job."
+  type        = string
+  default     = "*/30 * * * *"
+}
+
+variable "refresh_scheduler_time_zone" {
+  description = "Time zone for the staging refresh scheduler cron expression."
+  type        = string
+  default     = "Etc/UTC"
+}
