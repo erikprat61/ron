@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Disaster Tracker Demo UI</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Standalone demo UI</p>
+        <h1>Disaster Tracker Dashboard</h1>
+        <p class="subtitle">
+          Explore active disasters, ZIP-code impact, resource signals, and source health from a UI that is fully isolated from the ASP.NET application.
+        </p>
+      </div>
+
+      <form id="api-config-form" class="panel compact-panel">
+        <div class="section-heading">
+          <h2>Connection</h2>
+          <p>Point the demo at any compatible API instance.</p>
+        </div>
+
+        <label for="api-base-url">API base URL</label>
+        <div class="inline-form">
+          <input id="api-base-url" name="apiBaseUrl" type="url" placeholder="http://localhost:5096" required>
+          <button type="submit">Connect</button>
+        </div>
+        <p class="hint">Default local API: <code>http://localhost:5096</code></p>
+        <div id="global-status" class="status-message"></div>
+      </form>
+    </header>
+
+    <section>
+      <div class="section-heading">
+        <h2>Overview</h2>
+        <p>Quick summary of the current snapshot.</p>
+      </div>
+      <div id="overview-cards" class="overview-grid"></div>
+    </section>
+
+    <section class="main-grid">
+      <div class="panel">
+        <div class="section-heading">
+          <h2>Active disasters</h2>
+          <p>Filter the normalized live feed and inspect current incidents.</p>
+        </div>
+
+        <form id="active-filters-form" class="filter-grid">
+          <label>
+            <span>Source</span>
+            <select name="source">
+              <option value="">All sources</option>
+              <option value="nws">NWS</option>
+              <option value="fema">FEMA</option>
+              <option value="usgs">USGS</option>
+              <option value="eonet">EONET</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Category</span>
+            <select name="category">
+              <option value="">All categories</option>
+              <option value="fire">Fire</option>
+              <option value="flood">Flood</option>
+              <option value="storm">Storm</option>
+              <option value="hurricane">Hurricane</option>
+              <option value="earthquake">Earthquake</option>
+              <option value="drought">Drought</option>
+              <option value="weather">Weather</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Severity</span>
+            <select name="severity">
+              <option value="">All severities</option>
+              <option value="minor">Minor</option>
+              <option value="moderate">Moderate</option>
+              <option value="severe">Severe</option>
+              <option value="extreme">Extreme</option>
+            </select>
+          </label>
+
+          <label>
+            <span>State</span>
+            <input name="state" type="text" maxlength="2" placeholder="CA">
+          </label>
+
+          <label>
+            <span>Status</span>
+            <select name="status">
+              <option value="">Active + monitoring</option>
+              <option value="active">Active</option>
+              <option value="monitoring">Monitoring</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Limit</span>
+            <input name="limit" type="number" min="1" max="250" value="25">
+          </label>
+
+          <div class="filter-actions">
+            <button type="submit">Apply filters</button>
+            <button type="reset" class="secondary-button">Reset</button>
+          </div>
+        </form>
+
+        <div id="active-disasters-status" class="status-message"></div>
+        <div id="active-disasters-list" class="stack"></div>
+      </div>
+
+      <aside class="panel">
+        <div class="section-heading">
+          <h2>Event detail</h2>
+          <p>Click an active event to inspect the normalized record.</p>
+        </div>
+        <div id="selected-event" class="detail-panel"></div>
+      </aside>
+    </section>
+
+    <section class="support-grid">
+      <div class="panel">
+        <div class="section-heading">
+          <h2>ZIP impact lookup</h2>
+          <p>Check whether a ZIP code is currently impacted.</p>
+        </div>
+
+        <form id="zip-impact-form" class="inline-grid">
+          <label>
+            <span>ZIP code</span>
+            <input name="zipCode" type="text" inputmode="numeric" maxlength="10" value="90210" required>
+          </label>
+
+          <label>
+            <span>Source</span>
+            <select name="source">
+              <option value="">All sources</option>
+              <option value="nws">NWS</option>
+              <option value="fema">FEMA</option>
+              <option value="usgs">USGS</option>
+              <option value="eonet">EONET</option>
+            </select>
+          </label>
+
+          <div class="filter-actions inline-actions">
+            <button type="submit">Lookup ZIP</button>
+          </div>
+        </form>
+
+        <div id="zip-impact-result" class="result-panel"></div>
+      </div>
+
+      <div class="panel">
+        <div class="section-heading">
+          <h2>Source health</h2>
+          <p>Operational status and data freshness by feed.</p>
+        </div>
+        <div id="source-health" class="result-panel"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <h2>Resource impacts</h2>
+        <p>Explainable strategic-region signals triggered by active events.</p>
+      </div>
+
+      <form id="resource-filters-form" class="filter-grid">
+        <label>
+          <span>State</span>
+          <input name="state" type="text" maxlength="2" placeholder="TX">
+        </label>
+
+        <label>
+          <span>Resource or region</span>
+          <input name="resource" type="text" placeholder="semiconductor">
+        </label>
+
+        <label>
+          <span>Minimum confidence</span>
+          <select name="minimumConfidence">
+            <option value="">Any confidence</option>
+            <option value="medium">Medium or higher</option>
+            <option value="high">High only</option>
+          </select>
+        </label>
+
+        <div class="filter-actions">
+          <button type="submit">Apply filters</button>
+          <button type="reset" class="secondary-button">Reset</button>
+        </div>
+      </form>
+
+      <div id="resource-impacts-status" class="status-message"></div>
+      <div id="resource-impacts-list" class="resource-grid"></div>
+    </section>
+
+    <footer class="page-footer">
+      <p>Demo UI only. This interface is intentionally separate from the ASP.NET codebase and talks to the API over HTTP.</p>
+    </footer>
+  </div>
+</body>
+</html>

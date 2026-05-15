@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ron Modular Bun Architecture</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at top, rgba(59, 130, 246, 0.16), transparent 35%),
+        linear-gradient(180deg, #0f172a 0%, #020617 100%);
+    }
+
+    .glass {
+      background: rgba(15, 23, 42, 0.76);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .tree {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      white-space: pre;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-100">
+  <main class="mx-auto max-w-7xl px-6 py-10 lg:px-10">
+    <section class="glass rounded-3xl p-8 shadow-2xl shadow-slate-950/40">
+      <div class="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
+        <div class="max-w-3xl">
+          <p class="mb-3 inline-flex rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">
+            New architecture
+          </p>
+          <h1 class="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+            Ron as a Bun workspace with modular API client packages
+          </h1>
+          <p class="mt-4 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
+            Throw away the old single-app shape. The new system is a Bun monorepo where every external provider is wrapped in its own reusable client package,
+            service packages compose those clients, and the Hono app only orchestrates domain workflows and HTTP delivery.
+          </p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-3 xl:w-[24rem] xl:grid-cols-1">
+          <div class="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
+            <p class="text-sm font-medium text-emerald-200">Runtime</p>
+            <p class="mt-2 text-2xl font-semibold text-white">Bun workspaces</p>
+            <p class="mt-1 text-sm text-emerald-100/80">Fast local dev, one lockfile, package-level scripts</p>
+          </div>
+          <div class="rounded-2xl border border-violet-400/20 bg-violet-400/10 p-4">
+            <p class="text-sm font-medium text-violet-200">Boundary</p>
+            <p class="mt-2 text-2xl font-semibold text-white">API client packages</p>
+            <p class="mt-1 text-sm text-violet-100/80">One package per external API with typed requests, retries, and errors</p>
+          </div>
+          <div class="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+            <p class="text-sm font-medium text-amber-200">App layer</p>
+            <p class="mt-2 text-2xl font-semibold text-white">Thin Hono app</p>
+            <p class="mt-1 text-sm text-amber-100/80">Routes call services; services call packages; clients hit providers</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-8 grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
+      <article class="glass rounded-3xl p-7">
+        <h2 class="text-2xl font-semibold text-white">Workspace shape</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-300">
+          The repo becomes package-first. Shared contracts and helpers sit at the bottom, provider clients stay isolated, and application code lives in <code class="rounded bg-slate-900/70 px-1.5 py-0.5 text-cyan-200">apps/</code>.
+        </p>
+        <div class="mt-6 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/70 p-5">
+          <div class="tree text-sm text-slate-200">ron/
+  package.json
+  bunfig.toml
+  tsconfig.base.json
+  README.md
+  docs/
+    architecture.html
+  apps/
+    api/
+      package.json
+      src/
+        server.ts
+        app.ts
+        routes/
+          disaster-routes.ts
+          impact-routes.ts
+          source-routes.ts
+        openapi/
+          schema.ts
+    demo-ui/
+      package.json
+      src/
+        index.html
+        app.ts
+        styles.css
+  packages/
+    contract/
+      src/
+        disaster-models.ts
+        operational-models.ts
+        source-health-models.ts
+    geo/
+      src/
+        geo-point.ts
+        geo-polygon.ts
+        geo-match.ts
+    http/
+      src/
+        fetch-json.ts
+        http-error.ts
+        retry-policy.ts
+        rate-limit.ts
+    api-weather-gov/
+      src/
+        client.ts
+        alerts.ts
+        points.ts
+        types.ts
+      tests/
+        fixtures/
+          alert-response.json
+        alerts.test.ts
+        client.test.ts
+    api-openfema/
+      src/
+        client.ts
+        disasters.ts
+        types.ts
+      tests/
+        fixtures/
+          disaster-declarations.json
+        disasters.test.ts
+    api-usgs/
+      src/
+        client.ts
+        events.ts
+        types.ts
+      tests/
+        fixtures/
+          event-feed.geojson
+        events.test.ts
+    api-eonet/
+      src/
+        client.ts
+        events.ts
+        types.ts
+      tests/
+        fixtures/
+          events.json
+        events.test.ts
+    api-zippopotam/
+      src/
+        client.ts
+        zip-lookup.ts
+        types.ts
+      tests/
+        fixtures/
+          zip-94103.json
+        zip-lookup.test.ts
+    api-nws-points/
+      src/
+        client.ts
+        gridpoints.ts
+        offices.ts
+        types.ts
+      tests/
+        fixtures/
+          points-response.json
+        gridpoints.test.ts
+    api-census-tigerweb/
+      src/
+        client.ts
+        geographies.ts
+        types.ts
+      tests/
+        fixtures/
+          county-boundary.json
+        geographies.test.ts
+    service-disaster-catalog/
+      src/
+        catalog-service.ts
+        normalize-event.ts
+      tests/
+        normalize-nws.test.ts
+        normalize-fema.test.ts
+        normalize-usgs.test.ts
+        normalize-eonet.test.ts
+    service-zip-context/
+      src/
+        zip-context-service.ts
+      tests/
+        zip-context.test.ts
+    service-resource-impact/
+      src/
+        resource-impact-service.ts
+      tests/
+        resource-impact.test.ts
+    service-source-health/
+      src/
+        source-health-service.ts
+      tests/
+        source-health.test.ts
+  tests/
+    integration/
+      disaster-catalog.test.ts
+      zip-context.test.ts
+      resource-impact.test.ts
+      api-routes.test.ts
+    fixtures/</div>
+        </div>
+      </article>
+
+      <article class="glass rounded-3xl p-7">
+        <h2 class="text-2xl font-semibold text-white">Design rules</h2>
+        <div class="mt-6 grid gap-4">
+          <div class="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5">
+            <h3 class="text-lg font-medium text-cyan-200">1. One provider, one package</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-300">
+              Each external API gets its own Bun package with typed endpoints, auth/config, retry behavior, and provider-specific errors.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5">
+            <h3 class="text-lg font-medium text-cyan-200">2. Normalize above the clients</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-300">
+              Client packages should expose provider-native shapes. Service packages map those shapes into shared Ron domain contracts.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5">
+            <h3 class="text-lg font-medium text-cyan-200">3. No provider logic in routes</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-300">
+              The Hono app imports service packages only. It should never import Weather.gov, FEMA, USGS, NASA, or geo lookup clients directly.
+            </p>
+          </div>
+          <div class="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5">
+            <h3 class="text-lg font-medium text-cyan-200">4. Shared transport stays shared</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-300">
+              Timeouts, retries, rate limiting, headers, and tracing belong in <code class="rounded bg-slate-800 px-1.5 py-0.5 text-cyan-200">packages/http</code> so every client behaves consistently.
+            </p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="mt-8">
+      <article class="glass rounded-3xl p-7">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-semibold text-white">External API packages</h2>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+              These provider packages are the new hard boundaries in the system. Each should be publishable, mockable, and independently testable.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 overflow-hidden rounded-2xl border border-slate-800">
+          <table class="min-w-full divide-y divide-slate-800 bg-slate-950/70 text-left text-sm">
+            <thead class="bg-slate-900/90 text-slate-300">
+              <tr>
+                <th class="px-4 py-3 font-medium">Package</th>
+                <th class="px-4 py-3 font-medium">Wraps</th>
+                <th class="px-4 py-3 font-medium">Exports</th>
+                <th class="px-4 py-3 font-medium">Used by</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-200">
+              <tr>
+                <td class="px-4 py-3"><code>packages/api-weather-gov</code></td>
+                <td class="px-4 py-3">api.weather.gov alerts and forecast-adjacent endpoints</td>
+                <td class="px-4 py-3"><code>WeatherGovClient</code>, alert types, paging helpers</td>
+                <td class="px-4 py-3"><code>service-disaster-catalog</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>packages/api-openfema</code></td>
+                <td class="px-4 py-3">OpenFEMA disaster declarations and related datasets</td>
+                <td class="px-4 py-3"><code>OpenFemaClient</code>, query builders, dataset types</td>
+                <td class="px-4 py-3"><code>service-disaster-catalog</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>packages/api-usgs</code></td>
+                <td class="px-4 py-3">USGS earthquake and hazard feeds</td>
+                <td class="px-4 py-3"><code>UsgsClient</code>, event feed types</td>
+                <td class="px-4 py-3"><code>service-disaster-catalog</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>packages/api-eonet</code></td>
+                <td class="px-4 py-3">NASA EONET event and geometry feeds</td>
+                <td class="px-4 py-3"><code>EonetClient</code>, event types, geometry adapters</td>
+                <td class="px-4 py-3"><code>service-disaster-catalog</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>packages/api-zippopotam</code></td>
+                <td class="px-4 py-3">Zippopotam.us ZIP lookup</td>
+                <td class="px-4 py-3"><code>ZippopotamClient</code>, ZIP place types</td>
+                <td class="px-4 py-3"><code>service-zip-context</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>packages/api-nws-points</code></td>
+                <td class="px-4 py-3">NWS points, office, and grid metadata endpoints</td>
+                <td class="px-4 py-3"><code>NwsPointsClient</code>, point response types</td>
+                <td class="px-4 py-3"><code>service-zip-context</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>packages/api-census-tigerweb</code></td>
+                <td class="px-4 py-3">Census TIGERWeb geography lookups</td>
+                <td class="px-4 py-3"><code>TigerWebClient</code>, county and boundary types</td>
+                <td class="px-4 py-3"><code>service-zip-context</code>, <code>service-resource-impact</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="mt-8">
+      <article class="glass rounded-3xl p-7">
+        <h2 class="text-2xl font-semibold text-white">HTTP API surface</h2>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+          The Hono app exposes Ron domain data only — never raw provider payloads. All responses include a
+          <code class="rounded bg-slate-900/70 px-1.5 py-0.5 text-cyan-200">generatedAt</code> timestamp.
+          Errors follow RFC 9457 Problem Details.
+        </p>
+
+        <div class="mt-6 overflow-hidden rounded-2xl border border-slate-800">
+          <table class="min-w-full divide-y divide-slate-800 bg-slate-950/70 text-left text-sm">
+            <thead class="bg-slate-900/90 text-slate-300">
+              <tr>
+                <th class="px-4 py-3 font-medium">Method</th>
+                <th class="px-4 py-3 font-medium">Path</th>
+                <th class="px-4 py-3 font-medium">Query params</th>
+                <th class="px-4 py-3 font-medium">Returns</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-200">
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/health</code></td>
+                <td class="px-4 py-3 text-slate-400">—</td>
+                <td class="px-4 py-3">Liveness status for the API process itself</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/openapi.json</code></td>
+                <td class="px-4 py-3 text-slate-400">—</td>
+                <td class="px-4 py-3">OpenAPI 3.1 contract generated from <code>packages/contract</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/disasters</code></td>
+                <td class="px-4 py-3"><code>source</code> <code>category</code> <code>severity</code> <code>status</code> <code>state</code> <code>limit</code></td>
+                <td class="px-4 py-3"><code>DisasterSearchResponse</code> — paginated list of normalized events</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/disasters/:id</code></td>
+                <td class="px-4 py-3 text-slate-400">—</td>
+                <td class="px-4 py-3">Single <code>DisasterEvent</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/disasters/snapshot</code></td>
+                <td class="px-4 py-3 text-slate-400">—</td>
+                <td class="px-4 py-3"><code>DisasterSnapshot</code> — full assembled view for dashboards</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/zip-codes/:zip/impact</code></td>
+                <td class="px-4 py-3"><code>source</code></td>
+                <td class="px-4 py-3"><code>ZipImpactResponse</code> — resolved location + matching disasters</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/resource-impacts</code></td>
+                <td class="px-4 py-3"><code>state</code> <code>resource</code> <code>minimumConfidence</code></td>
+                <td class="px-4 py-3"><code>ResourceImpactResponse</code> — resource risk signals</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/sources/health</code></td>
+                <td class="px-4 py-3 text-slate-400">—</td>
+                <td class="px-4 py-3"><code>SourceHealthResponse</code> — status of all 7 provider integrations</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-8 grid gap-6 lg:grid-cols-3">
+          <div class="lg:col-span-2 space-y-4">
+            <h3 class="text-lg font-semibold text-white">Example requests</h3>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <p class="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Search active severe floods in California</p>
+              <code class="text-sm text-cyan-200">GET /disasters?source=nws&amp;category=flood&amp;severity=severe&amp;status=active&amp;state=CA&amp;limit=50</code>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <p class="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">ZIP code impact lookup</p>
+              <code class="text-sm text-cyan-200">GET /zip-codes/94103/impact?source=nws</code>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <p class="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Resource impacts by state and confidence</p>
+              <code class="text-sm text-cyan-200">GET /resource-impacts?state=CA&amp;resource=water&amp;minimumConfidence=medium</code>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white">Response envelope</h3>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+              <pre class="text-xs leading-6 text-slate-200">{
+  "generatedAt": "2026-05-14T17:00:00Z",
+  "count": 2,
+  "items": [
+    {
+      "id": "nws-abc123",
+      "source": "nws",
+      "title": "Flood Warning",
+      "category": "flood",
+      "severity": "severe",
+      "status": "active",
+      "startedAt": "2026-05-14T15:00:00Z",
+      "endedAt": null,
+      "summary": "...",
+      "stateCodes": ["CA"],
+      "countyFipsCodes": ["06075"],
+      "centroid": {
+        "latitude": 37.77,
+        "longitude": -122.42
+      },
+      "sourceUrl": "https://..."
+    }
+  ]
+}</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <h3 class="text-lg font-semibold text-white">ZIP impact response shape</h3>
+          <div class="mt-3 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+            <pre class="text-xs leading-6 text-slate-200">{
+  "generatedAt": "2026-05-14T17:00:00Z",
+  "location": {
+    "zipCode": "94103",
+    "city": "San Francisco",
+    "stateCode": "CA",
+    "countyFipsCode": "06075",
+    "centroid": { "latitude": 37.77, "longitude": -122.42 }
+  },
+  "isImpacted": true,
+  "matches": [
+    {
+      "disasterId": "nws-abc123",
+      "title": "Flood Warning",
+      "matchKind": "county",
+      "confidence": "high",
+      "reason": "ZIP county matches affected county FIPS code",
+      "event": { "...": "full DisasterEvent" }
+    }
+  ]
+}</pre>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="mt-8 grid gap-6 xl:grid-cols-[1fr,1fr]">
+      <article class="glass rounded-3xl p-7">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-semibold text-white">Package dependency diagram</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-300">
+              Dependencies flow downward. Apps depend on services, services depend on provider clients and shared contracts, and provider clients depend on shared transport only.
+            </p>
+          </div>
+          <span class="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-300">
+            Mermaid
+          </span>
+        </div>
+
+        <div class="mermaid mt-6 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-left">
+flowchart TB
+    classDef app fill:#082f49,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px
+    classDef service fill:#052e16,stroke:#34d399,color:#d1fae5,stroke-width:1px
+    classDef client fill:#312e81,stroke:#a78bfa,color:#ede9fe,stroke-width:1px
+    classDef shared fill:#3f2a06,stroke:#f59e0b,color:#fef3c7,stroke-width:1px
+
+    ApiApp["apps/api"]
+    DemoUi["apps/demo-ui"]
+
+    CatalogSvc["service-disaster-catalog"]
+    ZipSvc["service-zip-context"]
+    ImpactSvc["service-resource-impact"]
+    HealthSvc["service-source-health"]
+
+    WeatherGov["api-weather-gov"]
+    OpenFema["api-openfema"]
+    Usgs["api-usgs"]
+    Eonet["api-eonet"]
+    Zippopotam["api-zippopotam"]
+    NwsPoints["api-nws-points"]
+    TigerWeb["api-census-tigerweb"]
+
+    Contract["contract"]
+    Geo["geo"]
+    Http["http"]
+
+    ApiApp --> CatalogSvc
+    ApiApp --> ZipSvc
+    ApiApp --> ImpactSvc
+    ApiApp --> HealthSvc
+    DemoUi --> ApiApp
+
+    CatalogSvc --> WeatherGov
+    CatalogSvc --> OpenFema
+    CatalogSvc --> Usgs
+    CatalogSvc --> Eonet
+    CatalogSvc --> Contract
+    CatalogSvc --> Geo
+
+    ZipSvc --> Zippopotam
+    ZipSvc --> NwsPoints
+    ZipSvc --> TigerWeb
+    ZipSvc --> Contract
+    ZipSvc --> Geo
+
+    ImpactSvc --> Contract
+    ImpactSvc --> Geo
+    ImpactSvc --> TigerWeb
+    HealthSvc --> Contract
+
+    WeatherGov --> Http
+    OpenFema --> Http
+    Usgs --> Http
+    Eonet --> Http
+    Zippopotam --> Http
+    NwsPoints --> Http
+    TigerWeb --> Http
+
+    class ApiApp,DemoUi app
+    class CatalogSvc,ZipSvc,ImpactSvc,HealthSvc service
+    class WeatherGov,OpenFema,Usgs,Eonet,Zippopotam,NwsPoints,TigerWeb client
+    class Contract,Geo,Http shared
+        </div>
+      </article>
+
+      <article class="glass rounded-3xl p-7">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-semibold text-white">Runtime request flow</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-300">
+              The app layer composes services, and services fan out into the client packages that speak to external providers.
+            </p>
+          </div>
+          <span class="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-300">
+            Mermaid
+          </span>
+        </div>
+
+        <div class="mermaid mt-6 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-left">
+flowchart LR
+    Browser["Demo UI or API consumer"] --> Hono["apps/api Hono routes"]
+
+    Hono --> DisasterRoute["disaster routes"]
+    Hono --> ZipRoute["zip routes"]
+    Hono --> ImpactRoute["impact routes"]
+    Hono --> HealthRoute["source health routes"]
+
+    DisasterRoute --> Catalog["service-disaster-catalog"]
+    ZipRoute --> ZipContext["service-zip-context"]
+    ImpactRoute --> Impact["service-resource-impact"]
+    HealthRoute --> SourceHealth["service-source-health"]
+
+    Catalog --> Wg["api-weather-gov"]
+    Catalog --> Fema["api-openfema"]
+    Catalog --> Quake["api-usgs"]
+    Catalog --> Space["api-eonet"]
+
+    ZipContext --> ZipApi["api-zippopotam"]
+    ZipContext --> Points["api-nws-points"]
+    ZipContext --> Census["api-census-tigerweb"]
+    Impact --> Census
+
+    Wg --> WgUp["api.weather.gov"]
+    Fema --> FemaUp["OpenFEMA"]
+    Quake --> UsgsUp["USGS"]
+    Space --> EonetUp["NASA EONET"]
+    ZipApi --> ZipUp["Zippopotam.us"]
+    Points --> NwsUp["NWS Points API"]
+    Census --> CensusUp["Census TIGERWeb"]
+        </div>
+      </article>
+    </section>
+
+    <section class="mt-8 grid gap-6 lg:grid-cols-[0.95fr,1.05fr]">
+      <article class="glass rounded-3xl p-7">
+        <h2 class="text-2xl font-semibold text-white">Client package contract</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-300">
+          Every provider package should feel the same to consume even when the provider APIs behave differently.
+        </p>
+        <div class="mt-6 grid gap-4">
+          <div class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5">
+            <h3 class="text-lg font-medium text-cyan-100">Typed constructor</h3>
+            <p class="mt-2 text-sm text-cyan-50/90">Accept base URL overrides, headers, timeout, retries, and user-agent information through a typed config object.</p>
+          </div>
+          <div class="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
+            <h3 class="text-lg font-medium text-emerald-100">Endpoint modules</h3>
+            <p class="mt-2 text-sm text-emerald-50/90">Split endpoints into files like <code>alerts.ts</code>, <code>events.ts</code>, or <code>geographies.ts</code> so packages stay modular internally too.</p>
+          </div>
+          <div class="rounded-2xl border border-violet-400/20 bg-violet-400/10 p-5">
+            <h3 class="text-lg font-medium text-violet-100">Provider-native types</h3>
+            <p class="mt-2 text-sm text-violet-50/90">Do not leak Ron normalization into the packages. Keep external schemas intact and map them in service packages.</p>
+          </div>
+          <div class="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-5">
+            <h3 class="text-lg font-medium text-amber-100">Explicit errors</h3>
+            <p class="mt-2 text-sm text-amber-50/90">Surface rate limits, not-found cases, invalid provider payloads, and upstream failures with distinct error types.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="glass rounded-3xl p-7">
+        <h2 class="text-2xl font-semibold text-white">Recommended implementation order</h2>
+        <div class="mt-6 space-y-4">
+          <div class="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5">
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">Phase 1</p>
+            <p class="mt-2 text-base text-white">Create Bun workspaces, shared <code>contract</code>, <code>geo</code>, and <code>http</code> packages</p>
+          </div>
+          <div class="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5">
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">Phase 2</p>
+            <p class="mt-2 text-base text-white">Implement one package per external API with fixtures and package-level tests</p>
+          </div>
+          <div class="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5">
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">Phase 3</p>
+            <p class="mt-2 text-base text-white">Build service packages that normalize provider-native payloads into Ron contracts</p>
+          </div>
+          <div class="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5">
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">Phase 4</p>
+            <p class="mt-2 text-base text-white">Wire the Hono app to services only and generate API docs from shared contract models</p>
+          </div>
+          <div class="rounded-2xl border border-slate-700/80 bg-slate-900/70 p-5">
+            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">Phase 5</p>
+            <p class="mt-2 text-base text-white">Attach the demo UI and add end-to-end flows across app, services, and provider packages</p>
+          </div>
+        </div>
+      </article>
+    </section>
+    <section class="mt-8">
+      <article class="glass rounded-3xl p-7">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-semibold text-white">HTTP API shape</h2>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+              The Hono app exposes normalized Ron domain data only. External provider payloads never leak through the API boundary.
+              All responses include a <code class="rounded bg-slate-900/70 px-1.5 py-0.5 text-cyan-200">generatedAt</code> timestamp and a stable envelope shape.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 overflow-hidden rounded-2xl border border-slate-800">
+          <table class="min-w-full divide-y divide-slate-800 bg-slate-950/70 text-left text-sm">
+            <thead class="bg-slate-900/90 text-slate-300">
+              <tr>
+                <th class="px-4 py-3 font-medium">Method</th>
+                <th class="px-4 py-3 font-medium">Path</th>
+                <th class="px-4 py-3 font-medium">Query params</th>
+                <th class="px-4 py-3 font-medium">Response</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-200">
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/health</code></td>
+                <td class="px-4 py-3 text-slate-400">—</td>
+                <td class="px-4 py-3">Liveness and readiness for the API process</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/sources/health</code></td>
+                <td class="px-4 py-3 text-slate-400">—</td>
+                <td class="px-4 py-3"><code>SourceHealthResponse</code> — last refresh time, event count, and status per source</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/disasters</code></td>
+                <td class="px-4 py-3"><code>source, category, severity, status, state, limit</code></td>
+                <td class="px-4 py-3"><code>DisasterSearchResponse</code> — paginated list of normalized events</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/disasters/:id</code></td>
+                <td class="px-4 py-3 text-slate-400">—</td>
+                <td class="px-4 py-3">Single <code>DisasterEvent</code></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/zip-codes/:zip/impact</code></td>
+                <td class="px-4 py-3"><code>source</code></td>
+                <td class="px-4 py-3"><code>ZipImpactResponse</code> — resolved location + matched disasters</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/resource-impacts</code></td>
+                <td class="px-4 py-3"><code>state, resource, minimumConfidence</code></td>
+                <td class="px-4 py-3"><code>ResourceImpactResponse</code> — resource risk signals</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/snapshot</code></td>
+                <td class="px-4 py-3 text-slate-400">—</td>
+                <td class="px-4 py-3"><code>DisasterSnapshot</code> — all events, resource impacts, and source health in one call</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><span class="rounded bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">GET</span></td>
+                <td class="px-4 py-3"><code>/openapi.json</code></td>
+                <td class="px-4 py-3 text-slate-400">—</td>
+                <td class="px-4 py-3">Generated OpenAPI 3 schema derived from <code>packages/contract</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="mt-8 grid gap-6 lg:grid-cols-3">
+      <article class="glass rounded-3xl p-7">
+        <h2 class="text-xl font-semibold text-white">Disaster search</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-300">Filter normalized events from any combination of sources.</p>
+        <div class="mt-4 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+          <pre class="tree text-xs text-slate-200">GET /disasters
+  ?source=nws
+  &amp;category=flood
+  &amp;severity=severe
+  &amp;status=active
+  &amp;state=CA
+  &amp;limit=50
+
+{
+  "generatedAt": "2026-05-14T17:41:00Z",
+  "count": 1,
+  "items": [
+    {
+      "id": "nws-123",
+      "source": "nws",
+      "title": "Flood Warning",
+      "category": "flood",
+      "severity": "severe",
+      "status": "active",
+      "startedAt": "2026-05-14T15:00:00Z",
+      "endedAt": null,
+      "summary": "River flooding expected",
+      "stateCodes": ["CA"],
+      "countyFipsCodes": ["06075"],
+      "centroid": {
+        "latitude": 37.77,
+        "longitude": -122.42
+      },
+      "sourceUrl": "https://..."
+    }
+  ]
+}</pre>
+        </div>
+      </article>
+
+      <article class="glass rounded-3xl p-7">
+        <h2 class="text-xl font-semibold text-white">ZIP code impact</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-300">Resolve a ZIP and match it against active disasters by boundary, zone, county, or radius.</p>
+        <div class="mt-4 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+          <pre class="tree text-xs text-slate-200">GET /zip-codes/94103/impact
+  ?source=nws
+
+{
+  "generatedAt": "2026-05-14T17:41:00Z",
+  "location": {
+    "zipCode": "94103",
+    "city": "San Francisco",
+    "stateCode": "CA",
+    "countyFipsCode": "06075",
+    "centroid": {
+      "latitude": 37.77,
+      "longitude": -122.42
+    }
+  },
+  "isImpacted": true,
+  "matches": [
+    {
+      "disasterId": "nws-123",
+      "title": "Flood Warning",
+      "matchKind": "county",
+      "confidence": "high",
+      "reason": "ZIP county in affected area"
+    }
+  ]
+}</pre>
+        </div>
+      </article>
+
+      <article class="glass rounded-3xl p-7">
+        <h2 class="text-xl font-semibold text-white">Resource impacts</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-300">Query which strategic resources are at risk, filtered by region, state, and confidence.</p>
+        <div class="mt-4 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+          <pre class="tree text-xs text-slate-200">GET /resource-impacts
+  ?state=CA
+  &amp;resource=water
+  &amp;minimumConfidence=medium
+
+{
+  "generatedAt": "2026-05-14T17:41:00Z",
+  "count": 1,
+  "items": [
+    {
+      "resource": "water",
+      "region": "Bay Area",
+      "confidence": "high",
+      "reason": "Flood event covers
+        resource area",
+      "stateCodes": ["CA"],
+      "countyFipsCodes": ["06075"],
+      "matchedEventIds": ["nws-123"]
+    }
+  ]
+}</pre>
+        </div>
+      </article>
+    </section>
+
+    <section class="mt-8">
+      <article class="glass rounded-3xl p-7">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-semibold text-white">Testing strategy</h2>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+              Unit tests live inside each package and never hit the network. Integration tests cross package boundaries and live at the workspace root.
+              The rule: <strong class="text-white">if it can be faked with a fixture, it must be.</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 grid gap-4 lg:grid-cols-3">
+          <div class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5">
+            <h3 class="text-base font-medium text-cyan-100">Provider client units</h3>
+            <p class="mt-2 text-sm text-cyan-50/90">Each <code>api-*</code> package ships fixtures alongside its tests. Mock HTTP at the fetch level so no live network is needed.</p>
+          </div>
+          <div class="rounded-2xl border border-violet-400/20 bg-violet-400/10 p-5">
+            <h3 class="text-base font-medium text-violet-100">Service integrations</h3>
+            <p class="mt-2 text-sm text-violet-50/90">Service-level tests cross multiple packages. They verify that normalization, matching, and geo logic produce correct Ron domain output end-to-end.</p>
+          </div>
+          <div class="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-5">
+            <h3 class="text-base font-medium text-amber-100">Live parity flag</h3>
+            <p class="mt-2 text-sm text-amber-50/90">Integration tests can optionally run against real providers with <code>TEST_LIVE=true</code>. Gated from CI by default to avoid flakiness.</p>
+          </div>
+        </div>
+
+        <div class="mt-6 overflow-hidden rounded-2xl border border-slate-800">
+          <table class="min-w-full divide-y divide-slate-800 bg-slate-950/70 text-left text-sm">
+            <thead class="bg-slate-900/90 text-slate-300">
+              <tr>
+                <th class="px-4 py-3 font-medium">Package</th>
+                <th class="px-4 py-3 font-medium">Type</th>
+                <th class="px-4 py-3 font-medium">What to test</th>
+                <th class="px-4 py-3 font-medium">Network?</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-200">
+              <tr>
+                <td class="px-4 py-3"><code>api-weather-gov</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-cyan-900/50 px-2 py-0.5 text-xs text-cyan-300">unit</span></td>
+                <td class="px-4 py-3">Parses alert JSON, handles 404 and 503 retry, paging</td>
+                <td class="px-4 py-3 text-slate-400">Mocked</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>api-openfema</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-cyan-900/50 px-2 py-0.5 text-xs text-cyan-300">unit</span></td>
+                <td class="px-4 py-3">Query builder produces correct URL params, parses disaster declarations</td>
+                <td class="px-4 py-3 text-slate-400">Mocked</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>api-usgs</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-cyan-900/50 px-2 py-0.5 text-xs text-cyan-300">unit</span></td>
+                <td class="px-4 py-3">GeoJSON event feed parses correctly, magnitude fields present</td>
+                <td class="px-4 py-3 text-slate-400">Mocked</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>api-eonet</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-cyan-900/50 px-2 py-0.5 text-xs text-cyan-300">unit</span></td>
+                <td class="px-4 py-3">Event and geometry feed parses correctly, handles missing geometry</td>
+                <td class="px-4 py-3 text-slate-400">Mocked</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>api-zippopotam</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-cyan-900/50 px-2 py-0.5 text-xs text-cyan-300">unit</span></td>
+                <td class="px-4 py-3">ZIP lookup parses place response, handles unknown ZIP 404</td>
+                <td class="px-4 py-3 text-slate-400">Mocked</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>api-nws-points</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-cyan-900/50 px-2 py-0.5 text-xs text-cyan-300">unit</span></td>
+                <td class="px-4 py-3">Grid and office response parses, zone IDs extracted correctly</td>
+                <td class="px-4 py-3 text-slate-400">Mocked</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>api-census-tigerweb</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-cyan-900/50 px-2 py-0.5 text-xs text-cyan-300">unit</span></td>
+                <td class="px-4 py-3">County boundary response parses, FIPS codes extracted</td>
+                <td class="px-4 py-3 text-slate-400">Mocked</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>packages/geo</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-cyan-900/50 px-2 py-0.5 text-xs text-cyan-300">unit</span></td>
+                <td class="px-4 py-3">Haversine math, point-in-polygon, bounding box overlap</td>
+                <td class="px-4 py-3 text-slate-400">None</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>packages/contract</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-cyan-900/50 px-2 py-0.5 text-xs text-cyan-300">unit</span></td>
+                <td class="px-4 py-3">Serialization round-trips, enum value exhaustiveness</td>
+                <td class="px-4 py-3 text-slate-400">None</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>service-disaster-catalog</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-violet-900/50 px-2 py-0.5 text-xs text-violet-300">integration</span></td>
+                <td class="px-4 py-3">Provider alert → valid <code>DisasterEvent</code> for each of the four sources</td>
+                <td class="px-4 py-3 text-slate-400">Mocked</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>service-zip-context</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-violet-900/50 px-2 py-0.5 text-xs text-violet-300">integration</span></td>
+                <td class="px-4 py-3">ZIP + TIGERWeb + NWS Points → valid <code>ZipCodeLocation</code></td>
+                <td class="px-4 py-3 text-slate-400">Mocked</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>service-resource-impact</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-violet-900/50 px-2 py-0.5 text-xs text-violet-300">integration</span></td>
+                <td class="px-4 py-3">Events + profiles → <code>ResourceImpactSignal</code> with correct confidence</td>
+                <td class="px-4 py-3 text-slate-400">Mocked</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3"><code>apps/api</code></td>
+                <td class="px-4 py-3"><span class="rounded bg-violet-900/50 px-2 py-0.5 text-xs text-violet-300">integration</span></td>
+                <td class="px-4 py-3">Route → service → response envelope shape correct, error paths return Problem Details</td>
+                <td class="px-4 py-3 text-slate-400">Mocked services</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-6">
+          <div class="mermaid overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/70 p-4 text-left">
+flowchart LR
+    classDef unit fill:#082f49,stroke:#38bdf8,color:#e0f2fe,stroke-width:1px
+    classDef integ fill:#312e81,stroke:#a78bfa,color:#ede9fe,stroke-width:1px
+    classDef live fill:#3f2a06,stroke:#f59e0b,color:#fef3c7,stroke-width:1px
+
+    subgraph InPackage["Inside each package (no network)"]
+        U1["api-weather-gov tests"]
+        U2["api-openfema tests"]
+        U3["api-usgs tests"]
+        U4["api-eonet tests"]
+        U5["api-zippopotam tests"]
+        U6["api-nws-points tests"]
+        U7["api-census-tigerweb tests"]
+        U8["geo tests"]
+        U9["contract tests"]
+    end
+
+    subgraph ServiceLayer["Service-level integration (mocked clients)"]
+        I1["service-disaster-catalog tests"]
+        I2["service-zip-context tests"]
+        I3["service-resource-impact tests"]
+        I4["apps/api route tests"]
+    end
+
+    subgraph RootInteg["tests/integration (optional TEST_LIVE=true)"]
+        L1["Live provider parity checks"]
+    end
+
+    InPackage --> ServiceLayer
+    ServiceLayer --> RootInteg
+
+    class U1,U2,U3,U4,U5,U6,U7,U8,U9 unit
+    class I1,I2,I3,I4 integ
+    class L1 live
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="mt-8">
+      <article class="glass rounded-3xl p-7">
+        <h2 class="text-2xl font-semibold text-white">API design rules</h2>
+        <div class="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div class="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-5">
+            <h3 class="text-base font-medium text-cyan-100">Stable envelopes</h3>
+            <p class="mt-2 text-sm text-cyan-50/90">Every collection response wraps items in <code>{ generatedAt, count, items }</code>. Clients should never parse bare arrays.</p>
+          </div>
+          <div class="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
+            <h3 class="text-base font-medium text-emerald-100">String enums</h3>
+            <p class="mt-2 text-sm text-emerald-50/90">All enum fields serialize as explicit strings (<code>"flood"</code>, <code>"severe"</code>) — never integers or computed values.</p>
+          </div>
+          <div class="rounded-2xl border border-violet-400/20 bg-violet-400/10 p-5">
+            <h3 class="text-base font-medium text-violet-100">No provider leakage</h3>
+            <p class="mt-2 text-sm text-violet-50/90">Response fields come from the Ron contract. Provider-native IDs, field names, and quirks are normalized away before they reach the route layer.</p>
+          </div>
+          <div class="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-5">
+            <h3 class="text-base font-medium text-amber-100">RFC 9457 errors</h3>
+            <p class="mt-2 text-sm text-amber-50/90">Error responses follow Problem Details (<code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code>) so clients can handle failures consistently.</p>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "dark",
+      securityLevel: "loose",
+      themeVariables: {
+        primaryColor: "#0f172a",
+        primaryTextColor: "#e2e8f0",
+        primaryBorderColor: "#38bdf8",
+        lineColor: "#94a3b8",
+        secondaryColor: "#111827",
+        tertiaryColor: "#020617"
+      }
+    });
+  </script>
+</body>
+</html>

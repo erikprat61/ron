@@ -1,0 +1,145 @@
+[
+  {
+    "id": "gulf-coast-energy",
+    "resource": "Energy and petrochemicals",
+    "region": "Texas and Louisiana Gulf Coast",
+    "summary": "Severe coastal disruption may affect refining, LNG, and petrochemical throughput.",
+    "explanation": "The Gulf Coast concentrates U.S. refining, export terminals, and petrochemical infrastructure, so severe storms, floods, or fire can ripple into fuel and plastics markets.",
+    "stateCodes": ["TX", "LA"],
+    "categories": ["storm", "flood", "hurricane", "weather", "fire"],
+    "minimumSeverity": "severe"
+  },
+  {
+    "id": "permian-energy",
+    "resource": "Oil and gas production",
+    "region": "Permian Basin",
+    "summary": "Operational disruption may reduce upstream oil and gas output.",
+    "explanation": "The Permian Basin is one of the world's most important oil and gas regions, so sustained disruption can tighten energy supply and strain logistics.",
+    "stateCodes": ["TX", "NM"],
+    "categories": ["fire", "flood", "storm", "weather", "earthquake"],
+    "minimumSeverity": "moderate",
+    "minimumMagnitude": 4.5
+  },
+  {
+    "id": "central-valley-agriculture",
+    "resource": "Specialty agriculture and irrigation",
+    "region": "California Central Valley",
+    "summary": "Agricultural supply could be constrained if severe events disrupt harvest or water access.",
+    "explanation": "California's Central Valley is a major specialty-crop region, so flood, fire, or prolonged severe weather can affect produce, nuts, and irrigation-dependent output.",
+    "stateCodes": ["CA"],
+    "categories": ["flood", "fire", "weather", "drought"],
+    "minimumSeverity": "moderate"
+  },
+  {
+    "id": "southern-plains-grain-cattle",
+    "resource": "Wheat and cattle",
+    "region": "Southern Plains",
+    "summary": "Fast-moving fire or severe drought can disrupt livestock and grain production.",
+    "explanation": "Oklahoma, Kansas, and Texas are major cattle and grain regions, so high-severity fire and weather events can have downstream food and feed impacts.",
+    "stateCodes": ["OK", "KS", "TX"],
+    "categories": ["fire", "weather", "drought"],
+    "minimumSeverity": "severe"
+  },
+  {
+    "id": "puerto-rico-pharma",
+    "resource": "Pharmaceutical manufacturing",
+    "region": "Puerto Rico",
+    "summary": "Severe island-wide disruption may affect pharmaceutical production and logistics.",
+    "explanation": "Puerto Rico hosts important pharmaceutical manufacturing capacity, so severe storms and floods can affect production continuity and outbound shipping.",
+    "stateCodes": ["PR"],
+    "categories": ["hurricane", "storm", "flood", "weather"],
+    "minimumSeverity": "severe"
+  },
+  {
+    "id": "central-thailand-storage-electronics",
+    "resource": "Storage devices and electronics assembly",
+    "region": "Central Thailand industrial corridor",
+    "summary": "Flooding in central Thailand can disrupt storage-device and electronics manufacturing output.",
+    "explanation": "Thailand's central industrial corridor has historically concentrated hard-drive and electronics production, so major floods can constrain component output and trigger downstream hardware shortages.",
+    "locationBounds": [
+      {
+        "minLatitude": 13.2,
+        "maxLatitude": 14.9,
+        "minLongitude": 99.8,
+        "maxLongitude": 101.8
+      }
+    ],
+    "locationKeywords": ["THAILAND", "AYUTTHAYA", "PATHUM THANI", "BANG PA-IN"],
+    "categories": ["flood", "storm", "weather"],
+    "minimumSeverity": "severe"
+  },
+  {
+    "id": "taiwan-semiconductors",
+    "resource": "Semiconductor fabrication and packaging",
+    "region": "Taiwan west-coast chip corridor",
+    "summary": "Severe disruption in Taiwan's fabrication corridor can materially affect chip supply.",
+    "explanation": "Taiwan's semiconductor cluster is globally critical, so severe earthquakes, storms, floods, or water stress around the west-coast fabrication corridor can ripple through computing, automotive, and industrial supply chains.",
+    "locationBounds": [
+      {
+        "minLatitude": 22.6,
+        "maxLatitude": 25.2,
+        "minLongitude": 120.0,
+        "maxLongitude": 121.8
+      }
+    ],
+    "locationKeywords": ["TAIWAN", "HSINCHU", "TAINAN", "TAICHUNG", "KAOHSIUNG"],
+    "categories": ["earthquake", "storm", "flood", "hurricane", "drought", "weather"],
+    "minimumSeverity": "moderate",
+    "minimumMagnitude": 5.5
+  },
+  {
+    "id": "northern-chile-copper",
+    "resource": "Copper mining and concentrates",
+    "region": "Northern Chile copper belt",
+    "summary": "Severe disruption in northern Chile may tighten copper supply and logistics.",
+    "explanation": "Northern Chile hosts globally important copper mines and export routes, so major earthquakes, floods, or severe storms can affect extraction, refining, and shipment schedules.",
+    "locationBounds": [
+      {
+        "minLatitude": -29.5,
+        "maxLatitude": -18.0,
+        "minLongitude": -71.5,
+        "maxLongitude": -67.0
+      }
+    ],
+    "locationKeywords": ["CHILE", "ATACAMA", "ANTOFAGASTA", "TARAPACA"],
+    "categories": ["earthquake", "flood", "storm", "weather"],
+    "minimumSeverity": "moderate",
+    "minimumMagnitude": 5.5
+  },
+  {
+    "id": "panama-canal-logistics",
+    "resource": "Global shipping and canal transit",
+    "region": "Panama Canal watershed",
+    "summary": "Drought or severe weather around the canal can reduce throughput and delay shipping.",
+    "explanation": "Panama Canal operations depend on water availability and resilient transit infrastructure, so drought, heavy rainfall, or storm disruption in the watershed can meaningfully affect container and bulk shipping flows.",
+    "locationBounds": [
+      {
+        "minLatitude": 8.6,
+        "maxLatitude": 9.7,
+        "minLongitude": -80.4,
+        "maxLongitude": -79.0
+      }
+    ],
+    "locationKeywords": ["PANAMA", "PANAMA CANAL"],
+    "categories": ["drought", "storm", "flood", "weather"],
+    "minimumSeverity": "moderate"
+  },
+  {
+    "id": "pilbara-iron-ore-lng",
+    "resource": "Iron ore and LNG exports",
+    "region": "Western Australia Pilbara and nearby export corridor",
+    "summary": "Cyclones or severe coastal disruption may affect bulk commodity exports from northwest Australia.",
+    "explanation": "Northwest Australia concentrates major iron ore and LNG export infrastructure, so severe tropical systems and flooding can disrupt mining operations, port loadouts, and shipping schedules.",
+    "locationBounds": [
+      {
+        "minLatitude": -24.8,
+        "maxLatitude": -18.0,
+        "minLongitude": 115.0,
+        "maxLongitude": 121.5
+      }
+    ],
+    "locationKeywords": ["AUSTRALIA", "WESTERN AUSTRALIA", "PILBARA", "PORT HEDLAND", "KARRATHA"],
+    "categories": ["hurricane", "storm", "flood", "weather", "fire"],
+    "minimumSeverity": "severe"
+  }
+]

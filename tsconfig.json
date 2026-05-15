@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@ron/contract": ["packages/contract/src/index.ts"],
+      "@ron/geo": ["packages/geo/src/index.ts"],
+      "@ron/http": ["packages/http/src/index.ts"],
+      "@ron/api-weather-gov": ["packages/api-weather-gov/src/index.ts"],
+      "@ron/api-openfema": ["packages/api-openfema/src/index.ts"],
+      "@ron/api-usgs": ["packages/api-usgs/src/index.ts"],
+      "@ron/api-eonet": ["packages/api-eonet/src/index.ts"],
+      "@ron/api-zippopotam": ["packages/api-zippopotam/src/index.ts"],
+      "@ron/api-nws-points": ["packages/api-nws-points/src/index.ts"],
+      "@ron/api-census-tigerweb": ["packages/api-census-tigerweb/src/index.ts"],
+      "@ron/service-disaster-catalog": ["packages/service-disaster-catalog/src/index.ts"],
+      "@ron/service-zip-context": ["packages/service-zip-context/src/index.ts"],
+      "@ron/service-resource-impact": ["packages/service-resource-impact/src/index.ts"],
+      "@ron/service-source-health": ["packages/service-source-health/src/index.ts"]
+    }
+  },
+  "include": ["apps/**/*.ts", "packages/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts"]
+}

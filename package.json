@@ -1,0 +1,24 @@
+{
+  "name": "ron",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "bunx tsc --noEmit",
+    "test": "bun test",
+    "dev:api": "bun run apps/api/src/server.ts",
+    "dev:ui": "bun run apps/demo-ui/src/server.ts",
+    "dev": "bun run scripts/run-local.ts"
+  },
+  "dependencies": {
+    "hono": "^4.8.3",
+    "zod": "^3.25.28"
+  },
+  "devDependencies": {
+    "bun-types": "^1.3.14",
+    "typescript": "^5.8.3"
+  }
+}
