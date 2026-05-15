@@ -3,4 +3,4 @@ bun.lock
 dist
 coverage
 .DS_Store
-
+docs/
