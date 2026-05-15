@@ -99,4 +99,47 @@ describe("API routes", () => {
       })
     );
   });
+
+  it("returns a contract-backed OpenAPI document", async () => {
+    const app = createApp({
+      config: defaultRonConfig,
+      disasterCatalogService: {
+        async getSnapshot() {
+          return { generatedAt: "", events: [], sourceHealth: [], resourceImpacts: [] };
+        }
+      } as never,
+      zipContextService: {} as never,
+      sourceHealthService: {
+        async getSourceHealth() {
+          return { generatedAt: "", items: [] };
+        }
+      } as never
+    });
+
+    const response = await app.request("http://localhost:5096/openapi.json");
+    expect(response.status).toBe(200);
+
+    const document = await response.json();
+    expect(document).toEqual(
+      expect.objectContaining({
+        openapi: "3.1.0",
+        servers: [{ url: "http://localhost:5096" }],
+        paths: expect.objectContaining({
+          "/disasters": expect.any(Object),
+          "/zip-codes/{zip}/impact": expect.any(Object),
+          "/snapshot": expect.any(Object)
+        }),
+        components: expect.objectContaining({
+          schemas: expect.objectContaining({
+            DisasterEvent: expect.objectContaining({
+              type: "object"
+            }),
+            ProblemDetails: expect.objectContaining({
+              type: "object"
+            })
+          })
+        })
+      })
+    );
+  });
 });

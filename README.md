@@ -42,6 +42,10 @@ Default local URLs:
 - UI: `http://localhost:4173`
 - OpenAPI: `http://localhost:5096/openapi.json`
 
+## VS Code
+
+Use **Run and Debug** with the **Ron: UI + API** configuration. It starts both Bun servers and opens the demo UI at `http://127.0.0.1:4173`, with the UI pointed at the local API on port `5096`.
+
 ## Build
 
 ```bash

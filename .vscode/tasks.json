@@ -1,0 +1,63 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ron: api",
+      "type": "shell",
+      "command": "bun run dev:api",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "presentation": {
+        "group": "ron",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": {
+        "owner": "ron-api",
+        "pattern": {
+          "regexp": "^(.*)$",
+          "message": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Ron API listening on http://localhost:5096"
+        }
+      }
+    },
+    {
+      "label": "ron: ui",
+      "type": "shell",
+      "command": "bun run dev:ui",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "presentation": {
+        "group": "ron",
+        "panel": "dedicated",
+        "reveal": "always"
+      },
+      "problemMatcher": {
+        "owner": "ron-ui",
+        "pattern": {
+          "regexp": "^(.*)$",
+          "message": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Ron demo UI listening on http://localhost:4173"
+        }
+      }
+    },
+    {
+      "label": "ron: start",
+      "dependsOn": ["ron: api", "ron: ui"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}

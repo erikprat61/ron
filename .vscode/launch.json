@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Ron: UI + API",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://127.0.0.1:4173",
+      "webRoot": "${workspaceFolder}/apps/demo-ui/src",
+      "preLaunchTask": "ron: start"
+    },
+    {
+      "name": "Ron: API only",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bun run dev:api",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Ron: UI only",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bun run dev:ui",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

@@ -53,7 +53,7 @@ export function createApp(services: AppServices) {
     });
   });
 
-  app.get("/openapi.json", (context) => json(context, buildOpenApiDocument()));
+  app.get("/openapi.json", (context) => json(context, buildOpenApiDocument(new URL(context.req.url).origin)));
 
   app.get("/sources/health", async (context) => {
     const response = await services.sourceHealthService.getSourceHealth();
