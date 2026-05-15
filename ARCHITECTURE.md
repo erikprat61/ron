@@ -209,4 +209,3 @@ Testing is package-first:
 ## Related docs
 
 - `README.md` for setup and feature overview
-- `docs/architecture.html` for the visual architecture reference

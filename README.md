@@ -34,8 +34,6 @@ packages/
   http/             shared HTTP client and upstream health monitor
   api-*/            one package per external provider
   service-*/        domain services that compose providers
-docs/
-  architecture.html visual architecture reference
 ARCHITECTURE.md     repository architecture and request flow
 ```
 
@@ -263,7 +261,6 @@ Use **Run and Debug** with the **Ron: UI + API** configuration. It starts both B
 
 - `README.md` for setup and feature overview
 - `ARCHITECTURE.md` for package boundaries, request flow, and runtime behavior
-- `docs/architecture.html` for the visual architecture reference
 
 ## Current limitations
 
