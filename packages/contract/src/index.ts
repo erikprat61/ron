@@ -293,6 +293,12 @@ export interface DemoUiConfig {
   publicApiBaseUrl: string;
 }
 
+export interface RateLimitConfig {
+  enabled: boolean;
+  windowMs: number;
+  maxRequests: number;
+}
+
 export interface RefreshTriggerConfig {
   authToken?: string;
   allowedInvokerEmails: string[];
@@ -326,6 +332,7 @@ export interface RonConfig {
   zipCodeLookup: ZipCodeLookupConfig;
   zipBoundary: ZipBoundaryConfig;
   demoUi: DemoUiConfig;
+  rateLimit: RateLimitConfig;
   refreshTrigger: RefreshTriggerConfig;
   redis: RedisConfig;
   database: DatabaseConfig;
@@ -383,6 +390,11 @@ export const defaultRonConfig: RonConfig = {
   demoUi: {
     allowedOrigins: ["http://localhost:4173", "http://127.0.0.1:4173"],
     publicApiBaseUrl: "http://localhost:5096"
+  },
+  rateLimit: {
+    enabled: true,
+    windowMs: 60_000,
+    maxRequests: 120
   },
   refreshTrigger: {
     allowedInvokerEmails: []

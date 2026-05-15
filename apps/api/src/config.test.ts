@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { loadConfig } from "./config.ts";
+import { defaultRonConfig } from "@ron/contract";
 
 const originalEnv = { ...process.env };
 
@@ -20,12 +21,16 @@ describe("loadConfig", () => {
     process.env.NODE_ENV = "production";
     delete process.env.DISASTER_BACKGROUND_REFRESH_ENABLED;
     delete process.env.DISASTER_WARM_CACHE_ON_STARTUP;
+    delete process.env.RON_RATE_LIMIT_ENABLED;
+    delete process.env.RON_RATE_LIMIT_WINDOW_MS;
+    delete process.env.RON_RATE_LIMIT_MAX_REQUESTS;
 
     const config = loadConfig();
 
     expect(config.environmentName).toBe("production");
     expect(config.disasterRefresh.backgroundRefreshEnabled).toBe(false);
     expect(config.disasterRefresh.warmCacheOnStartup).toBe(false);
+    expect(config.rateLimit).toEqual(defaultRonConfig.rateLimit);
   });
 
   it("parses deployment-oriented environment overrides", () => {
@@ -33,6 +38,9 @@ describe("loadConfig", () => {
     process.env.RON_ENVIRONMENT = "staging";
     process.env.RON_PUBLIC_API_BASE_URL = "https://api.staging.example.com/";
     process.env.RON_DEMO_UI_ALLOWED_ORIGINS = "https://ui.staging.example.com, https://preview.example.com";
+    process.env.RON_RATE_LIMIT_ENABLED = "true";
+    process.env.RON_RATE_LIMIT_WINDOW_MS = "30000";
+    process.env.RON_RATE_LIMIT_MAX_REQUESTS = "45";
     process.env.RON_REFRESH_AUTH_TOKEN = "test-token";
     process.env.RON_REFRESH_ALLOWED_INVOKER_EMAILS =
       "scheduler@ron-burgundy-staging.iam.gserviceaccount.com, deployer@ron-burgundy-staging.iam.gserviceaccount.com";
@@ -53,6 +61,11 @@ describe("loadConfig", () => {
       "https://ui.staging.example.com",
       "https://preview.example.com"
     ]);
+    expect(config.rateLimit).toEqual({
+      enabled: true,
+      windowMs: 30000,
+      maxRequests: 45
+    });
     expect(config.refreshTrigger.authToken).toBe("test-token");
     expect(config.refreshTrigger.allowedInvokerEmails).toEqual([
       "scheduler@ron-burgundy-staging.iam.gserviceaccount.com",

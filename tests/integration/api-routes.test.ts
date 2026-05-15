@@ -126,6 +126,45 @@ describe("API routes", () => {
     );
   });
 
+  it("applies a global rate limit while leaving health checks available", async () => {
+    const app = createApp({
+      config: {
+        ...defaultRonConfig,
+        rateLimit: {
+          enabled: true,
+          windowMs: 60_000,
+          maxRequests: 2
+        }
+      },
+      disasterCatalogService: {
+        async getSnapshot() {
+          return { generatedAt: "", events: [], sourceHealth: [], resourceImpacts: [] };
+        }
+      } as never,
+      zipContextService: {} as never,
+      sourceHealthService: {
+        async getSourceHealth() {
+          return { generatedAt: "", items: [] };
+        }
+      } as never
+    });
+
+    expect((await app.request("/disasters")).status).toBe(200);
+    expect((await app.request("/sources/health")).status).toBe(200);
+
+    const limitedResponse = await app.request("/openapi.json");
+    expect(limitedResponse.status).toBe(429);
+    expect(limitedResponse.headers.get("retry-after")).toBe("60");
+    expect(await limitedResponse.json()).toEqual(
+      expect.objectContaining({
+        title: "Too many requests",
+        status: 429
+      })
+    );
+
+    expect((await app.request("/health")).status).toBe(200);
+  });
+
   it("triggers an authenticated refresh with the shared token", async () => {
     const app = createApp({
       config: {

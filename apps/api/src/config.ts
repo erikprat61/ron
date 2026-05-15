@@ -39,6 +39,9 @@ const envSchema = z.object({
   SUPPLY_IMPACT_PROFILE_PATH: z.string().optional(),
   RON_PUBLIC_API_BASE_URL: z.string().url().optional(),
   RON_DEMO_UI_ALLOWED_ORIGINS: optionalCsvSchema,
+  RON_RATE_LIMIT_ENABLED: optionalBooleanSchema,
+  RON_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().optional(),
+  RON_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().optional(),
   RON_REFRESH_AUTH_TOKEN: z.string().trim().min(1).optional(),
   RON_REFRESH_ALLOWED_INVOKER_EMAILS: optionalCsvSchema,
   RON_REDIS_ENABLED: optionalBooleanSchema,
@@ -79,6 +82,12 @@ export function loadConfig(): RonConfig {
       ...defaultRonConfig.demoUi,
       allowedOrigins: env.RON_DEMO_UI_ALLOWED_ORIGINS ?? defaultRonConfig.demoUi.allowedOrigins,
       publicApiBaseUrl: env.RON_PUBLIC_API_BASE_URL ?? defaultRonConfig.demoUi.publicApiBaseUrl
+    },
+    rateLimit: {
+      ...defaultRonConfig.rateLimit,
+      enabled: env.RON_RATE_LIMIT_ENABLED ?? defaultRonConfig.rateLimit.enabled,
+      windowMs: env.RON_RATE_LIMIT_WINDOW_MS ?? defaultRonConfig.rateLimit.windowMs,
+      maxRequests: env.RON_RATE_LIMIT_MAX_REQUESTS ?? defaultRonConfig.rateLimit.maxRequests
     },
     refreshTrigger: {
       ...defaultRonConfig.refreshTrigger,

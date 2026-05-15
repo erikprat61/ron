@@ -147,6 +147,7 @@ Key runtime environment variables:
 | `SUPPLY_IMPACT_PROFILE_PATH` | Override the resource-impact profile JSON path. |
 | `RON_PUBLIC_API_BASE_URL` | Public API base URL used by the static demo UI build. |
 | `RON_DEMO_UI_ALLOWED_ORIGINS` | Comma-separated CORS allowlist for the demo UI origin(s). |
+| `RON_RATE_LIMIT_ENABLED` / `RON_RATE_LIMIT_WINDOW_MS` / `RON_RATE_LIMIT_MAX_REQUESTS` | Global in-memory API request limit for the demo app. |
 | `RON_REFRESH_AUTH_TOKEN` | Optional shared secret for manually triggering the protected refresh endpoint. |
 | `RON_REFRESH_ALLOWED_INVOKER_EMAILS` | Comma-separated Google service-account identities allowed to invoke the protected refresh endpoint with OIDC, including service-account emails or Google subject IDs. |
 | `RON_REDIS_ENABLED` / `RON_REDIS_URL` / `RON_REDIS_KEY_PREFIX` | Reserved Redis contract for future shared-cache work. |
@@ -165,9 +166,12 @@ Important config areas:
 - `zipCodeLookup`
 - `zipBoundary`
 - `demoUi`
+- `rateLimit`
 - `supplyImpact`
 
 The National Weather Service should be configured with a real descriptive user agent before production use. Production health checks should target `GET /health`, while upstream feed state remains available from `GET /sources/health`.
+
+The demo API also ships with a default global in-memory rate limit of 120 requests per minute. `GET /health` and CORS preflight requests are excluded so deployment health checks remain stable.
 
 The protected refresh trigger lives at `POST /internal/refresh`. In Google Cloud, Phase 4 expects Cloud Scheduler and the GitHub deployment service account to invoke that route with Google-signed OIDC tokens. Staging keeps cache warming on a slower `*/30 * * * *` cadence, while production uses `*/10 * * * *`; both environments also warm the new revision once immediately after deploy.
 

@@ -30,6 +30,7 @@ export interface AppOptions {
 export function createApp(services: AppServices, options: AppOptions = {}) {
   const app = new Hono();
   const verifyRefreshOidcToken = options.verifyRefreshOidcToken ?? verifyGoogleOidcToken;
+  const rateLimiter = createGlobalRateLimiter(services.config.rateLimit);
 
   app.use(
     "*",
@@ -37,6 +38,15 @@ export function createApp(services: AppServices, options: AppOptions = {}) {
       origin: services.config.demoUi.allowedOrigins
     })
   );
+
+  app.use("*", async (context, next) => {
+    const rateLimitResponse = rateLimiter(context);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
+    await next();
+  });
 
   app.get("/", (context) =>
     json(context, {
@@ -241,11 +251,17 @@ function json(context: Context, value: unknown, status = 200) {
   });
 }
 
-function problem(context: Context, details: ProblemDetails, status = details.status) {
+function problem(
+  context: Context,
+  details: ProblemDetails,
+  status = details.status,
+  headers?: Record<string, string>
+) {
   return new Response(JSON.stringify(details), {
     status,
     headers: {
-      "content-type": "application/problem+json; charset=utf-8"
+      "content-type": "application/problem+json; charset=utf-8",
+      ...headers
     }
   });
 }
@@ -259,4 +275,48 @@ function validationProblem(errors: Record<string, string[] | undefined>): Proble
       Object.entries(errors).map(([key, value]) => [key, value?.filter(Boolean) ?? []])
     )
   };
+}
+
+function createGlobalRateLimiter(config: RonConfig["rateLimit"]) {
+  let windowStartedAt = 0;
+  let requestCount = 0;
+
+  return (context: Context) => {
+    if (!config.enabled || shouldSkipRateLimit(context)) {
+      return undefined;
+    }
+
+    const now = Date.now();
+    if (windowStartedAt === 0 || now >= windowStartedAt + config.windowMs) {
+      windowStartedAt = now;
+      requestCount = 0;
+    }
+
+    if (requestCount >= config.maxRequests) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((windowStartedAt + config.windowMs - now) / 1000));
+      return problem(
+        context,
+        {
+          title: "Too many requests",
+          detail: `The demo API allows up to ${config.maxRequests} requests every ${Math.ceil(config.windowMs / 1000)} seconds.`,
+          status: 429
+        },
+        429,
+        {
+          "retry-after": retryAfterSeconds.toString()
+        }
+      );
+    }
+
+    requestCount += 1;
+    return undefined;
+  };
+}
+
+function shouldSkipRateLimit(context: Context) {
+  if (context.req.method === "OPTIONS") {
+    return true;
+  }
+
+  return context.req.path === "/health";
 }
