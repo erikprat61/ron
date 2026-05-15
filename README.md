@@ -173,6 +173,8 @@ The National Weather Service should be configured with a real descriptive user a
 
 The protected refresh trigger lives at `POST /internal/refresh`. In Google Cloud, Phase 4 expects Cloud Scheduler and the GitHub deployment service account to invoke that route with Google-signed OIDC tokens. Staging keeps cache warming on a slower `*/30 * * * *` cadence, while production uses `*/10 * * * *`; both environments also warm the new revision once immediately after deploy.
 
+Cloud Scheduler service-account tokens can present either the service-account email or the Google subject / authorized-party numeric identifier, so `RON_REFRESH_ALLOWED_INVOKER_EMAILS` should include both forms for scheduler and deployer identities when Cloud Run is locked down to OIDC-only refresh access.
+
 ## Deployment-oriented build paths
 
 Build the static demo UI assets for Cloud Storage hosting:
@@ -207,6 +209,8 @@ The shared foundation module provisions:
 - least-privilege runtime service accounts
 - GitHub Actions Workload Identity Federation and deploy identities for CI/CD
 
+Terraform manages the foundational Cloud Run service shape, IAM, scheduler, and storage resources, but delivery workflows own the deployed runtime image. The foundation module intentionally ignores image drift so later `terraform apply` runs do not roll Cloud Run back to the bootstrap placeholder image.
+
 Start from the example variables file in the environment you want, then initialize and plan Terraform from that directory.
 
 ## GitHub Actions delivery
@@ -233,7 +237,11 @@ The staging and production workflows expect GitHub **environment variables** wit
 
 Phase 4 also exports `refresh_scheduler_job_name`, `refresh_scheduler_service_account_email`, and `refresh_trigger_url` so the scheduler configuration can be inspected after `terraform apply`.
 
-Apply Terraform for the target environment first, then copy those outputs into the matching GitHub environment (`staging` or `production`). The production workflow takes a validated `git_ref` plus an existing Artifact Registry `image_uri` so Cloud Run promotion reuses the already-published API artifact.
+Apply Terraform for the target environment first, then copy those outputs into the matching GitHub environment (`staging` or `production`). The staging and production deployer service accounts also need both object-admin and bucket-reader access on the static UI bucket so `gcloud storage rsync` can inspect and publish assets.
+
+The production workflow takes a validated `git_ref` plus an existing Artifact Registry `image_uri` so Cloud Run promotion reuses the already-published API artifact. If production promotes an image from the staging Artifact Registry repository, grant `roles/artifactregistry.reader` on the staging repository to both the production deployer service account and the production Cloud Run service agent.
+
+Both deployment workflows mint a Google ID token with `google-github-actions/auth` before calling `POST /internal/refresh`. That avoids the `gcloud auth print-identity-token --audiences=...` limitation under federated GitHub credentials while preserving the same OIDC trust model as Cloud Scheduler.
 
 ## Build
 

@@ -81,6 +81,7 @@ The Hono app exposes normalized Ron domain data only. Provider-native payloads d
 | `GET /` | Service index and route discovery. |
 | `GET /health` | API readiness based on disaster snapshot source health. |
 | `GET /openapi.json` | Generated OpenAPI document for the Ron API contract. |
+| `POST /internal/refresh` | Protected cache-warm trigger for GitHub deploys and Cloud Scheduler. |
 | `GET /sources/health` | Health for primary disaster feeds plus ancillary ZIP-resolution providers. |
 | `GET /snapshot` | Raw aggregated Ron snapshot. |
 | `GET /disasters` | Filtered disaster search over the cached snapshot. |
@@ -172,7 +173,9 @@ Important configuration areas include:
 - `database`
 - `supplyImpact`
 
-The runtime override surface now includes deployment-focused values such as `RON_ENVIRONMENT`, `RON_PUBLIC_API_BASE_URL`, `RON_DEMO_UI_ALLOWED_ORIGINS`, future refresh-trigger auth, and reserved Redis/database settings in addition to the existing port and profile overrides.
+The runtime override surface now includes deployment-focused values such as `RON_ENVIRONMENT`, `RON_PUBLIC_API_BASE_URL`, `RON_DEMO_UI_ALLOWED_ORIGINS`, refresh-trigger OIDC allowlists, and reserved Redis/database settings in addition to the existing port and profile overrides.
+
+For Google-signed refresh tokens, the allowlist may need both service-account emails and Google numeric subject identifiers because Cloud Scheduler and workflow-minted ID tokens do not always present the same principal field.
 
 ## Design rules
 
@@ -187,6 +190,7 @@ The runtime override surface now includes deployment-focused values such as `RON
 - `service-disaster-catalog` caches the aggregated snapshot and per-source payloads.
 - `apps/api/src/server.ts` can warm the cache on startup when explicitly enabled.
 - A background interval refreshes the catalog only when local-development refresh mode is enabled.
+- `POST /internal/refresh` lets Cloud Scheduler and deployment workflows warm the cache explicitly with Google OIDC tokens.
 - `service-zip-context` caches resolved ZIP metadata in memory.
 - If provider refreshes fail, recent source payloads can be served as degraded stale data.
 - `UpstreamHealthMonitor` records success, degraded, and unhealthy states for ancillary dependencies.
