@@ -4,3 +4,8 @@ dist
 coverage
 .DS_Store
 docs/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars

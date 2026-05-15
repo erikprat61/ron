@@ -158,6 +158,7 @@ Ron currently integrates with:
 
 Important configuration areas include:
 
+- `environmentName`
 - `disasterRefresh`
 - `nationalWeatherService`
 - `fema`
@@ -166,9 +167,12 @@ Important configuration areas include:
 - `zipCodeLookup`
 - `zipBoundary`
 - `demoUi`
+- `refreshTrigger`
+- `redis`
+- `database`
 - `supplyImpact`
 
-The main environment overrides currently exposed are `PORT`, `UI_PORT`, `NWS_USER_AGENT`, and `SUPPLY_IMPACT_PROFILE_PATH`.
+The runtime override surface now includes deployment-focused values such as `RON_ENVIRONMENT`, `RON_PUBLIC_API_BASE_URL`, `RON_DEMO_UI_ALLOWED_ORIGINS`, future refresh-trigger auth, and reserved Redis/database settings in addition to the existing port and profile overrides.
 
 ## Design rules
 
@@ -181,11 +185,13 @@ The main environment overrides currently exposed are `PORT`, `UI_PORT`, `NWS_USE
 ## Caching and resilience
 
 - `service-disaster-catalog` caches the aggregated snapshot and per-source payloads.
-- `apps/api/src/server.ts` can warm the cache on startup.
-- A background interval refreshes the catalog on a fixed cadence.
+- `apps/api/src/server.ts` can warm the cache on startup when explicitly enabled.
+- A background interval refreshes the catalog only when local-development refresh mode is enabled.
 - `service-zip-context` caches resolved ZIP metadata in memory.
 - If provider refreshes fail, recent source payloads can be served as degraded stale data.
 - `UpstreamHealthMonitor` records success, degraded, and unhealthy states for ancillary dependencies.
+
+`GET /health` is intentionally process-local so Cloud Run probes do not trigger upstream refresh work. Upstream feed status remains available from `GET /sources/health`.
 
 ## Testing shape
 

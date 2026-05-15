@@ -100,6 +100,32 @@ describe("API routes", () => {
     );
   });
 
+  it("returns health without forcing a snapshot refresh", async () => {
+    const app = createApp({
+      config: defaultRonConfig,
+      disasterCatalogService: {
+        async getSnapshot() {
+          throw new Error("health should not fetch a snapshot");
+        }
+      } as never,
+      zipContextService: {} as never,
+      sourceHealthService: {
+        async getSourceHealth() {
+          return { generatedAt: "", items: [] };
+        }
+      } as never
+    });
+
+    const response = await app.request("/health");
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(
+      expect.objectContaining({
+        status: "ok",
+        ready: true
+      })
+    );
+  });
+
   it("returns a contract-backed OpenAPI document", async () => {
     const app = createApp({
       config: defaultRonConfig,

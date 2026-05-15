@@ -1,0 +1,6 @@
+project_id                 = "ron-production-project"
+region                     = "us-central1"
+artifact_registry_location = "us-central1"
+api_container_image        = "us-docker.pkg.dev/cloudrun/container/hello"
+create_ui_cloud_run        = false
+ui_domain_names            = []

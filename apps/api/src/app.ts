@@ -45,11 +45,10 @@ export function createApp(services: AppServices) {
   );
 
   app.get("/health", async (context) => {
-    const snapshot = await services.disasterCatalogService.getSnapshot();
     return json(context, {
       generatedAt: new Date().toISOString(),
       status: "ok",
-      ready: snapshot.sourceHealth.every((source) => source.status !== "unhealthy")
+      ready: true
     });
   });
 

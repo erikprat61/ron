@@ -64,9 +64,11 @@ if (import.meta.main) {
     void disasterCatalogService.getSnapshot().catch(() => undefined);
   }
 
-  setInterval(() => {
-    void disasterCatalogService.refresh().catch(() => undefined);
-  }, config.disasterRefresh.backgroundRefreshIntervalMs);
+  if (config.disasterRefresh.backgroundRefreshEnabled) {
+    setInterval(() => {
+      void disasterCatalogService.refresh().catch(() => undefined);
+    }, config.disasterRefresh.backgroundRefreshIntervalMs);
+  }
 
   Bun.serve({
     port: config.port,

@@ -134,16 +134,28 @@ The result is a ranked list of `low`, `medium`, or `high` confidence signals tie
 
 ## Configuration
 
-Ron loads defaults from `packages/contract/src/index.ts` and supports a small set of environment overrides in `apps/api/src/config.ts`.
+Ron loads defaults from `packages/contract/src/index.ts` and layers environment overrides in `apps/api/src/config.ts`.
 
-Key environment variables:
+Key runtime environment variables:
 
-- `PORT`
-- `UI_PORT`
-- `NWS_USER_AGENT`
-- `SUPPLY_IMPACT_PROFILE_PATH`
+| Variable | Purpose |
+| --- | --- |
+| `NODE_ENV` | Standard runtime mode. In non-development environments, startup warm-cache and background refresh default to off. |
+| `RON_ENVIRONMENT` | Explicit environment name such as `development`, `staging`, or `production`. |
+| `PORT` | API listen port. Cloud Run sets this automatically. |
+| `UI_PORT` | Local demo UI server port. |
+| `NWS_USER_AGENT` | Required descriptive Weather.gov user agent for production use. |
+| `SUPPLY_IMPACT_PROFILE_PATH` | Override the resource-impact profile JSON path. |
+| `RON_PUBLIC_API_BASE_URL` | Public API base URL used by the static demo UI build. |
+| `RON_DEMO_UI_ALLOWED_ORIGINS` | Comma-separated CORS allowlist for the demo UI origin(s). |
+| `RON_REFRESH_AUTH_TOKEN` | Reserved auth token contract for a future protected refresh trigger. |
+| `RON_REDIS_ENABLED` / `RON_REDIS_URL` / `RON_REDIS_KEY_PREFIX` | Reserved Redis contract for future shared-cache work. |
+| `RON_DATABASE_ENABLED` / `RON_DATABASE_URL` | Reserved database contract for future persistence work. |
+| `DISASTER_BACKGROUND_REFRESH_ENABLED` | Enables the in-process refresh timer. Leave disabled in Cloud Run. |
+| `DISASTER_BACKGROUND_REFRESH_INTERVAL_MS` | Interval for local timer-driven refresh when enabled. |
+| `DISASTER_WARM_CACHE_ON_STARTUP` | Warms the snapshot cache during startup. Leave disabled in Cloud Run unless explicitly needed. |
 
-Important default config areas:
+Important config areas:
 
 - `disasterRefresh`
 - `nationalWeatherService`
@@ -155,7 +167,66 @@ Important default config areas:
 - `demoUi`
 - `supplyImpact`
 
-The National Weather Service should be configured with a real descriptive user agent before production use.
+The National Weather Service should be configured with a real descriptive user agent before production use. Production health checks should target `GET /health`, while upstream feed state remains available from `GET /sources/health`.
+
+## Deployment-oriented build paths
+
+Build the static demo UI assets for Cloud Storage hosting:
+
+```bash
+bun run build:demo-ui
+```
+
+The output is written to `apps/demo-ui/dist/` and defaults the UI to `RON_PUBLIC_API_BASE_URL` at build time.
+
+Build the production API image:
+
+```bash
+docker build -t ron-api .
+```
+
+## Terraform foundation
+
+Phase 2 infrastructure now lives under `infra/terraform/` with separate entrypoints for:
+
+- `infra/terraform/envs/staging`
+- `infra/terraform/envs/production`
+
+The shared foundation module provisions:
+
+- required Google Cloud API enablement
+- Artifact Registry for API images
+- Cloud Run for the API and optional temporary UI runtime
+- Cloud Storage plus Cloud CDN load-balancer resources for the static UI
+- Secret Manager placeholders for runtime configuration
+- least-privilege runtime service accounts
+- GitHub Actions Workload Identity Federation and deploy identities for CI/CD
+
+Start from the example variables file in the environment you want, then initialize and plan Terraform from that directory.
+
+## GitHub Actions delivery
+
+Phase 3 automation now lives in:
+
+- `.github/workflows/ci.yml` for pull request validation
+- `.github/workflows/deploy-staging.yml` for `main` branch staging deploys
+- `.github/workflows/promote-production.yml` for manual production promotion of a previously published API image
+
+The staging and production workflows expect GitHub **environment variables** with the same names in each environment:
+
+| Variable | Source |
+| --- | --- |
+| `GCP_PROJECT_ID` | `terraform output -raw project_id` |
+| `GCP_REGION` | `terraform output -raw region` |
+| `GCP_ARTIFACT_REGISTRY_REPOSITORY_URL` | `terraform output -raw artifact_registry_repository_url` |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | `terraform output -raw github_workload_identity_provider` |
+| `GCP_SERVICE_ACCOUNT` | `terraform output -raw deployment_service_account_email` |
+| `GCP_API_SERVICE` | `terraform output -raw api_service_name` |
+| `GCP_UI_BUCKET` | `terraform output -raw ui_bucket_name` |
+| `GCP_UI_URL` | `terraform output -raw ui_url` |
+| `GCP_UI_URL_MAP` | `terraform output -raw ui_url_map_name` |
+
+Apply Terraform for the target environment first, then copy those outputs into the matching GitHub environment (`staging` or `production`). The production workflow takes a validated `git_ref` plus an existing Artifact Registry `image_uri` so Cloud Run promotion reuses the already-published API artifact.
 
 ## Build
 

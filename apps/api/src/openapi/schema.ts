@@ -394,7 +394,7 @@ export function buildOpenApiDocument(baseUrl = "http://localhost:5096") {
           summary: "Get API health",
           operationId: "getHealth",
           responses: {
-            200: jsonResponse("Current process liveness and readiness.", healthResponseSchema)
+            200: jsonResponse("Current process liveness and Cloud Run-safe readiness.", healthResponseSchema)
           }
         }
       },

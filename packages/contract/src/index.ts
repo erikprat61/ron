@@ -241,6 +241,7 @@ export interface ProblemDetails {
 export interface DisasterRefreshConfig {
   cacheDurationMs: number;
   backgroundRefreshIntervalMs: number;
+  backgroundRefreshEnabled: boolean;
   warmCacheOnStartup: boolean;
   maxHealthyStalenessMs: number;
 }
@@ -289,6 +290,22 @@ export interface ZipBoundaryConfig {
 
 export interface DemoUiConfig {
   allowedOrigins: string[];
+  publicApiBaseUrl: string;
+}
+
+export interface RefreshTriggerConfig {
+  authToken?: string;
+}
+
+export interface RedisConfig {
+  enabled: boolean;
+  url?: string;
+  keyPrefix: string;
+}
+
+export interface DatabaseConfig {
+  enabled: boolean;
+  url?: string;
 }
 
 export interface SupplyImpactConfig {
@@ -296,6 +313,7 @@ export interface SupplyImpactConfig {
 }
 
 export interface RonConfig {
+  environmentName: string;
   nodeEnv: string;
   port: number;
   uiPort: number;
@@ -307,16 +325,21 @@ export interface RonConfig {
   zipCodeLookup: ZipCodeLookupConfig;
   zipBoundary: ZipBoundaryConfig;
   demoUi: DemoUiConfig;
+  refreshTrigger: RefreshTriggerConfig;
+  redis: RedisConfig;
+  database: DatabaseConfig;
   supplyImpact: SupplyImpactConfig;
 }
 
 export const defaultRonConfig: RonConfig = {
+  environmentName: "development",
   nodeEnv: "development",
   port: 5096,
   uiPort: 4173,
   disasterRefresh: {
     cacheDurationMs: 10 * 60 * 1000,
     backgroundRefreshIntervalMs: 5 * 60 * 1000,
+    backgroundRefreshEnabled: true,
     warmCacheOnStartup: true,
     maxHealthyStalenessMs: 30 * 60 * 1000
   },
@@ -357,7 +380,16 @@ export const defaultRonConfig: RonConfig = {
     timeoutMs: 20_000
   },
   demoUi: {
-    allowedOrigins: ["http://localhost:4173", "http://127.0.0.1:4173"]
+    allowedOrigins: ["http://localhost:4173", "http://127.0.0.1:4173"],
+    publicApiBaseUrl: "http://localhost:5096"
+  },
+  refreshTrigger: {},
+  redis: {
+    enabled: false,
+    keyPrefix: "ron"
+  },
+  database: {
+    enabled: false
   },
   supplyImpact: {
     resourceProfilePath: "packages/service-resource-impact/src/data/strategic-resource-profiles.json"

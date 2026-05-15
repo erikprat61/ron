@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = "http://localhost:5096";
+const DEFAULT_API_BASE_URL = normalizeBaseUrl(window.__RON_DEMO_UI_CONFIG__?.apiBaseUrl ?? "http://localhost:5096");
 const STORAGE_KEY = "disaster-tracker-demo.api-base-url";
 
 const state = {

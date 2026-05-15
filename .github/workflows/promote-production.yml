@@ -1,0 +1,155 @@
+name: Promote production
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: Validated git ref that matches the promoted image.
+        required: true
+        type: string
+      image_uri:
+        description: Fully qualified Artifact Registry image URI to promote.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: promote-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: production
+
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      GCP_API_SERVICE: ${{ vars.GCP_API_SERVICE }}
+      GCP_UI_BUCKET: ${{ vars.GCP_UI_BUCKET }}
+      GCP_UI_URL: ${{ vars.GCP_UI_URL }}
+      GCP_UI_URL_MAP: ${{ vars.GCP_UI_URL_MAP }}
+
+    steps:
+      - name: Check out validated ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.git_ref }}
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Validate GitHub environment variables
+        run: |
+          set -euo pipefail
+
+          required_vars=(
+            GCP_PROJECT_ID
+            GCP_REGION
+            GCP_WORKLOAD_IDENTITY_PROVIDER
+            GCP_SERVICE_ACCOUNT
+            GCP_API_SERVICE
+            GCP_UI_BUCKET
+            GCP_UI_URL
+            GCP_UI_URL_MAP
+          )
+
+          for name in "${required_vars[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "Missing required GitHub environment variable: $name" >&2
+              exit 1
+            fi
+          done
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build workspace
+        run: bun run build
+
+      - name: Run tests
+        run: bun test
+
+      - name: Deploy validated API image
+        id: deploy
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$GCP_API_SERVICE" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --image "${{ inputs.image_uri }}" \
+            --quiet
+
+          api_url="$(gcloud run services describe "$GCP_API_SERVICE" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --format='value(status.url)')"
+
+          echo "api_url=${api_url}" >> "$GITHUB_OUTPUT"
+
+      - name: Build static UI assets
+        run: |
+          set -euo pipefail
+          RON_PUBLIC_API_BASE_URL="${{ steps.deploy.outputs.api_url }}" bun run build:demo-ui
+
+      - name: Publish UI assets
+        run: |
+          set -euo pipefail
+          gcloud storage rsync apps/demo-ui/dist "gs://${GCP_UI_BUCKET}" \
+            --recursive \
+            --delete-unmatched-destination-objects
+
+      - name: Invalidate UI CDN cache
+        run: |
+          set -euo pipefail
+          gcloud compute url-maps invalidate-cdn-cache "$GCP_UI_URL_MAP" \
+            --project "$GCP_PROJECT_ID" \
+            --global \
+            --path "/*" \
+            --quiet
+
+      - name: Smoke check production API
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent \
+            --retry 10 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            "${{ steps.deploy.outputs.api_url }}/health" >/dev/null
+
+          curl --fail --show-error --silent \
+            --retry 10 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            "${{ steps.deploy.outputs.api_url }}/openapi.json" >/dev/null
+
+      - name: Smoke check production UI
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent \
+            --retry 10 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            "${GCP_UI_URL}" >/dev/null
+
+          curl --fail --show-error --silent \
+            --retry 10 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            "${GCP_UI_URL%/}/app-config.js" | grep -F "${{ steps.deploy.outputs.api_url }}"

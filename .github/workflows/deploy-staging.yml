@@ -1,0 +1,165 @@
+name: Deploy staging
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      GCP_ARTIFACT_REGISTRY_REPOSITORY_URL: ${{ vars.GCP_ARTIFACT_REGISTRY_REPOSITORY_URL }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      GCP_API_SERVICE: ${{ vars.GCP_API_SERVICE }}
+      GCP_UI_BUCKET: ${{ vars.GCP_UI_BUCKET }}
+      GCP_UI_URL: ${{ vars.GCP_UI_URL }}
+      GCP_UI_URL_MAP: ${{ vars.GCP_UI_URL_MAP }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Validate GitHub environment variables
+        run: |
+          set -euo pipefail
+
+          required_vars=(
+            GCP_PROJECT_ID
+            GCP_REGION
+            GCP_ARTIFACT_REGISTRY_REPOSITORY_URL
+            GCP_WORKLOAD_IDENTITY_PROVIDER
+            GCP_SERVICE_ACCOUNT
+            GCP_API_SERVICE
+            GCP_UI_BUCKET
+            GCP_UI_URL
+            GCP_UI_URL_MAP
+          )
+
+          for name in "${required_vars[@]}"; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "Missing required GitHub environment variable: $name" >&2
+              exit 1
+            fi
+          done
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build workspace
+        run: bun run build
+
+      - name: Run tests
+        run: bun test
+
+      - name: Configure Artifact Registry auth
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+
+      - name: Compute image URI
+        id: image
+        run: |
+          set -euo pipefail
+          repository_url="${GCP_ARTIFACT_REGISTRY_REPOSITORY_URL%/}"
+          echo "uri=${repository_url}/${GCP_API_SERVICE}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push API image
+        run: |
+          set -euo pipefail
+          docker build --tag "${{ steps.image.outputs.uri }}" .
+          docker push "${{ steps.image.outputs.uri }}"
+
+      - name: Deploy API to Cloud Run
+        id: deploy
+        run: |
+          set -euo pipefail
+          gcloud run deploy "$GCP_API_SERVICE" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --image "${{ steps.image.outputs.uri }}" \
+            --quiet
+
+          api_url="$(gcloud run services describe "$GCP_API_SERVICE" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --format='value(status.url)')"
+
+          echo "api_url=${api_url}" >> "$GITHUB_OUTPUT"
+
+      - name: Build static UI assets
+        run: |
+          set -euo pipefail
+          RON_PUBLIC_API_BASE_URL="${{ steps.deploy.outputs.api_url }}" bun run build:demo-ui
+
+      - name: Publish UI assets
+        run: |
+          set -euo pipefail
+          gcloud storage rsync apps/demo-ui/dist "gs://${GCP_UI_BUCKET}" \
+            --recursive \
+            --delete-unmatched-destination-objects
+
+      - name: Invalidate UI CDN cache
+        run: |
+          set -euo pipefail
+          gcloud compute url-maps invalidate-cdn-cache "$GCP_UI_URL_MAP" \
+            --project "$GCP_PROJECT_ID" \
+            --global \
+            --path "/*" \
+            --quiet
+
+      - name: Smoke check staging API
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent \
+            --retry 10 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            "${{ steps.deploy.outputs.api_url }}/health" >/dev/null
+
+          curl --fail --show-error --silent \
+            --retry 10 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            "${{ steps.deploy.outputs.api_url }}/openapi.json" >/dev/null
+
+      - name: Smoke check staging UI
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent \
+            --retry 10 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            "${GCP_UI_URL}" >/dev/null
+
+          curl --fail --show-error --silent \
+            --retry 10 \
+            --retry-all-errors \
+            --retry-delay 10 \
+            "${GCP_UI_URL%/}/app-config.js" | grep -F "${{ steps.deploy.outputs.api_url }}"

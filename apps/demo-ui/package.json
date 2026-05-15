@@ -5,6 +5,7 @@
   "main": "./src/index.ts",
   "scripts": {
     "build": "bunx tsc --noEmit -p ../../tsconfig.json",
+    "build:static": "bun run ../../scripts/build-demo-ui.ts",
     "test": "bun test"
   }
 }
