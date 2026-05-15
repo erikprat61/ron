@@ -3,6 +3,7 @@ dist
 coverage
 .DS_Store
 docs/
+google-cloud-implementation-plan.md
 .terraform/
 *.tfstate
 *.tfstate.*
