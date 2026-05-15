@@ -104,8 +104,8 @@ export class JsonHttpClient {
       method: "GET",
       headers: {
         Accept: "application/json",
-        ...Object.fromEntries(new Headers(this.options.headers ?? {}).entries()),
-        ...Object.fromEntries(new Headers(init?.headers ?? {}).entries())
+        ...headersToObject(this.options.headers),
+        ...headersToObject(init?.headers)
       },
       signal
     });
@@ -120,4 +120,17 @@ export class JsonHttpClient {
 
     return (await response.json()) as T;
   }
+}
+
+function headersToObject(headers?: HeadersInit): Record<string, string> {
+  const mapped: Record<string, string> = {};
+  if (!headers) {
+    return mapped;
+  }
+
+  new Headers(headers).forEach((value, key) => {
+    mapped[key] = value;
+  });
+
+  return mapped;
 }

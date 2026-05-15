@@ -13,7 +13,21 @@ export class ResourceImpactService {
   private readonly profiles: StrategicResourceProfile[];
 
   constructor(profilePath: string) {
-    this.profiles = JSON.parse(readFileSync(profilePath, "utf8")) as StrategicResourceProfile[];
+    const rawProfiles = JSON.parse(readFileSync(profilePath, "utf8")) as Array<Partial<StrategicResourceProfile>>;
+    this.profiles = rawProfiles.map((profile) => ({
+      id: profile.id ?? "unknown-profile",
+      resource: profile.resource ?? "Unknown resource",
+      region: profile.region ?? "Unknown region",
+      summary: profile.summary ?? "",
+      explanation: profile.explanation ?? "",
+      stateCodes: profile.stateCodes ?? [],
+      countyFipsCodes: profile.countyFipsCodes ?? [],
+      locationBounds: profile.locationBounds ?? [],
+      locationKeywords: profile.locationKeywords ?? [],
+      categories: profile.categories ?? [],
+      minimumSeverity: profile.minimumSeverity ?? "moderate",
+      minimumMagnitude: profile.minimumMagnitude
+    }));
   }
 
   analyze(events: DisasterEvent[]): ResourceImpactSignal[] {

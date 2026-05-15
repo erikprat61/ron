@@ -154,7 +154,7 @@ async function loadActiveDisasters() {
   setStatus(dom.activeDisastersStatus, "Loading active disasters...");
 
   try {
-    const response = await fetchJson("/api/disasters/active", state.activeFilters);
+    const response = await fetchJson("/disasters", state.activeFilters);
     state.activeResponse = response;
 
     if (!state.selectedEventId || !response.items.some(item => item.id === state.selectedEventId)) {
@@ -194,7 +194,7 @@ async function loadSelectedEvent(eventId, silent = false) {
   }
 
   try {
-    state.selectedEvent = await fetchJson(`/api/disasters/${encodeURIComponent(eventId)}`);
+    state.selectedEvent = await fetchJson(`/disasters/${encodeURIComponent(eventId)}`);
   } catch (error) {
     state.selectedEvent = null;
     dom.selectedEvent.innerHTML = `<p class="detail-placeholder">${escapeHtml(error.message)}</p>`;
@@ -215,7 +215,7 @@ async function loadZipImpact() {
   dom.zipImpactResult.innerHTML = `<p class="empty-state">Loading ZIP impact...</p>`;
 
   try {
-    state.zipResponse = await fetchJson(`/api/disasters/zip/${encodeURIComponent(zipCode)}`, {
+    state.zipResponse = await fetchJson(`/zip-codes/${encodeURIComponent(zipCode)}/impact`, {
       source: state.zipFilters.source
     });
   } catch (error) {
@@ -229,7 +229,7 @@ async function loadZipImpact() {
 
 async function loadSourceHealth() {
   try {
-    state.sourceHealthResponse = await fetchJson("/api/sources/health");
+    state.sourceHealthResponse = await fetchJson("/sources/health");
   } catch (error) {
     state.sourceHealthResponse = null;
     dom.sourceHealth.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`;
@@ -245,7 +245,7 @@ async function loadResourceImpacts() {
   setStatus(dom.resourceImpactsStatus, "Loading resource impacts...");
 
   try {
-    state.resourceResponse = await fetchJson("/api/impacts/resources", state.resourceFilters);
+    state.resourceResponse = await fetchJson("/resource-impacts", state.resourceFilters);
     renderOverview();
     renderResourceImpacts();
     setStatus(
@@ -440,7 +440,7 @@ function renderZipImpact() {
         <div>
           <h3 class="card-title">${escapeHtml(location.city)}, ${escapeHtml(location.stateCode)} ${escapeHtml(location.zipCode)}</h3>
           <p class="card-subtitle">
-            Coordinates ${escapeHtml(location.coordinates.latitude.toFixed(3))}, ${escapeHtml(location.coordinates.longitude.toFixed(3))}
+            Coordinates ${escapeHtml(location.centroid.latitude.toFixed(3))}, ${escapeHtml(location.centroid.longitude.toFixed(3))}
           </p>
         </div>
         ${renderBadge(response.isImpacted ? "Impacted" : "Clear", response.isImpacted ? "high" : "source")}
@@ -464,7 +464,7 @@ function renderZipImpact() {
           <article class="match-card">
             <div class="card-header">
               <div>
-                <h3 class="card-title">${escapeHtml(match.event.title)}</h3>
+                <h3 class="card-title">${escapeHtml(match.event?.title || match.title)}</h3>
                 <p class="card-subtitle">${escapeHtml(match.reason)}</p>
               </div>
               <div class="badge-row">
@@ -475,7 +475,7 @@ function renderZipImpact() {
             <div class="match-grid">
               <div class="match-item">
                 <span class="meta-label">Source</span>
-                <span class="meta-value">${escapeHtml(formatEnum(match.event.source))}</span>
+                <span class="meta-value">${escapeHtml(formatEnum(match.event?.source || "unknown"))}</span>
               </div>
               <div class="match-item">
                 <span class="meta-label">Distance</span>
@@ -544,7 +544,7 @@ function renderResourceImpacts() {
       <p class="small-text">${escapeHtml(signal.summary)}</p>
 
       <div class="detail-grid">
-        ${renderDetailItem("Triggered events", String(signal.eventIds.length))}
+        ${renderDetailItem("Triggered events", String((signal.matchedEventIds || []).length))}
         ${renderDetailItem("State codes", joinOrFallback(signal.stateCodes, "None"))}
       </div>
 
