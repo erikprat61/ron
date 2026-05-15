@@ -132,8 +132,13 @@ export function getAllowedGoogleOidcAudiences(audience: string): string[] {
 
   try {
     const url = new URL(normalized);
-    audiences.add(url.origin);
-    audiences.add(`${url.origin}/`);
+    for (const protocol of getAcceptedHttpProtocols(url.protocol)) {
+      const candidate = new URL(url.toString());
+      candidate.protocol = protocol;
+      audiences.add(candidate.toString());
+      audiences.add(candidate.origin);
+      audiences.add(`${candidate.origin}/`);
+    }
   } catch {
     // Preserve the explicit configured audience when it is not a URL.
   }
@@ -175,4 +180,12 @@ function safeDecodeJwt(idToken: string): JWTPayload | undefined {
   } catch {
     return undefined;
   }
+}
+
+function getAcceptedHttpProtocols(protocol: string): string[] {
+  if (protocol === "http:" || protocol === "https:") {
+    return ["https:", "http:"];
+  }
+
+  return [protocol];
 }

@@ -6,7 +6,10 @@ describe("refresh trigger helpers", () => {
     expect(getAllowedGoogleOidcAudiences("https://ron-api.example.run.app/internal/refresh")).toEqual([
       "https://ron-api.example.run.app/internal/refresh",
       "https://ron-api.example.run.app",
-      "https://ron-api.example.run.app/"
+      "https://ron-api.example.run.app/",
+      "http://ron-api.example.run.app/internal/refresh",
+      "http://ron-api.example.run.app",
+      "http://ron-api.example.run.app/"
     ]);
   });
 
